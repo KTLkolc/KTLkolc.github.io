@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>纸上谈兵 - 策略对战</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        accent: '#FF4D4F',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            }
+            .animate-float {
+                animation: float 6s ease-in-out infinite;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-dark to-primary min-h-screen font-inter text-light overflow-x-hidden">
+    <!-- 背景装饰元素 -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div class="absolute top-10 left-10 w-64 h-64 bg-primary/20 rounded-full filter blur-3xl animate-pulse-slow"></div>
+        <div class="absolute bottom-10 right-10 w-80 h-80 bg-secondary/20 rounded-full filter blur-3xl animate-pulse-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-40 h-40 bg-accent/20 rounded-full filter blur-2xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <!-- 主容器 -->
+    <div class="relative min-h-screen flex flex-col items-center justify-center px-4 py-8 z-10">
+        <!-- 标题区域 -->
+        <div class="text-center mb-12 transform transition-all duration-500 hover:scale-105">
+            <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold text-white mb-4 text-shadow-lg">
+                <span class="text-secondary">纸上</span><span class="text-accent">谈兵</span>
+            </h1>
+            <p class="text-[clamp(1rem,2vw,1.25rem)] text-light/80 max-w-2xl mx-auto">
+                策略对战，决胜千里。创建房间邀请好友，或加入现有战局，展现你的智谋！
+            </p>
+        </div>
+        
+        <!-- 主要功能卡片 -->
+        <div class="w-full max-w-4xl bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden transition-all duration-500 hover:shadow-primary/30">
+            <!-- 选项卡导航 -->
+            <div class="flex border-b border-white/10">
+                <button id="tab-create" class="flex-1 py-4 px-6 text-center font-medium text-white border-b-2 border-secondary bg-secondary/10 transition-all duration-300 hover:bg-secondary/20">
+                    <i class="fa fa-plus-circle mr-2"></i> 创建房间
+                </button>
+                <button id="tab-join" class="flex-1 py-4 px-6 text-center font-medium text-light/70 border-b-2 border-transparent transition-all duration-300 hover:bg-white/5">
+                    <i class="fa fa-sign-in mr-2"></i> 进入房间
+                </button>
+                <button id="tab-random" class="flex-1 py-4 px-6 text-center font-medium text-light/70 border-b-2 border-transparent transition-all duration-300 hover:bg-white/5">
+                    <i class="fa fa-random mr-2"></i> 随机匹配
+                </button>
+            </div>
+            
+            <!-- 选项卡内容 -->
+            <div class="p-6">
+                <!-- 创建房间表单 -->
+                <div id="content-create" class="block">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center">
+                        <i class="fa fa-cubes text-secondary mr-3"></i> 配置游戏房间
+                    </h3>
+                    
+                    <form id="create-room-form" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-light/80 mb-2 text-sm font-medium">房间名称</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fa fa-home text-light/50"></i>
+                                    </div>
+                                    <input type="text" id="room-name" placeholder="为你的房间取个名字" 
+                                        class="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white placeholder-light/40 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-transparent transition-all">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-light/80 mb-2 text-sm font-medium">游戏模式</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fa fa-gamepad text-light/50"></i>
+                                    </div>
+                                    <select id="game-mode" 
+                                        class="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-transparent transition-all appearance-none">
+                                        <option value="classic">经典对战</option>
+                                        <option value="team">团队协作</option>
+                                        <option value="survival">生存模式</option>
+                                        <option value="custom">自定义模式</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fa fa-chevron-down text-light/50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-light/80 mb-2 text-sm font-medium">房间密码 (可选)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-lock text-light/50"></i>
+                                </div>
+                                <input type="password" id="room-password" placeholder="设置密码保护你的房间" 
+                                    class="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white placeholder-light/40 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-transparent transition-all">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-light/80 mb-2 text-sm font-medium">玩家数量</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-users text-light/50"></i>
+                                </div>
+                                <input type="range" id="player-count" min="2" max="8" value="2" 
+                                    class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer mt-4">
+                                <div class="flex justify-between text-xs text-light/60 mt-1">
+                                    <span>2人</span>
+                                    <span id="player-count-value">2人</span>
+                                    <span>8人</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="button" id="create-room-submit" 
+                                class="w-full bg-gradient-to-r from-secondary to-accent hover:from-secondary/90 hover:to-accent/90 text-white font-medium py-3 px-6 rounded-lg shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-accent/50 flex items-center justify-center">
+                                <i class="fa fa-play-circle mr-2"></i> 创建并开始游戏
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 加入房间表单 -->
+                <div id="content-join" class="hidden">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center">
+                        <i class="fa fa-search text-accent mr-3"></i> 查找并加入房间
+                    </h3>
+                    
+                    <div class="mb-6">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-keyboard-o text-light/50"></i>
+                            </div>
+                            <input type="text" id="join-room-id" placeholder="输入房间ID或名称" 
+                                class="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white placeholder-light/40 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-transparent transition-all">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-light/80 font-medium mb-3">可用房间</h4>
+                        <div id="room-list" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                            <!-- 动态生成的房间列表 -->
+                            <div class="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all cursor-pointer">
+                                <div class="flex justify-between items-center">
+                                    <h5 class="font-medium text-white">三国谋略战场</h5>
+                                    <span class="px-2 py-1 bg-primary/30 text-xs rounded-full">2/4</span>
+                                </div>
+                                <div class="flex justify-between mt-2 text-xs text-light/60">
+                                    <span><i class="fa fa-user mr-1"></i> 诸葛亮</span>
+                                    <span><i class="fa fa-gamepad mr-1"></i> 经典对战</span>
+                                    <span><i class="fa fa-lock mr-1"></i> 已加密</span>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all cursor-pointer">
+                                <div class="flex justify-between items-center">
+                                    <h5 class="font-medium text-white">现代战术推演</h5>
+                                    <span class="px-2 py-1 bg-primary/30 text-xs rounded-full">1/6</span>
+                                </div>
+                                <div class="flex justify-between mt-2 text-xs text-light/60">
+                                    <span><i class="fa fa-user mr-1"></i> 韩信</span>
+                                    <span><i class="fa fa-gamepad mr-1"></i> 团队协作</span>
+                                    <span><i class="fa fa-unlock mr-1"></i> 公开</span>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all cursor-pointer">
+                                <div class="flex justify-between items-center">
+                                    <h5 class="font-medium text-white">世界大战</h5>
+                                    <span class="px-2 py-1 bg-primary/30 text-xs rounded-full">4/8</span>
+                                </div>
+                                <div class="flex justify-between mt-2 text-xs text-light/60">
+                                    <span><i class="fa fa-user mr-1"></i> 拿破仑</span>
+                                    <span><i class="fa fa-gamepad mr-1"></i> 生存模式</span>
+                                    <span><i class="fa fa-lock mr-1"></i> 已加密</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="button" id="join-room-submit" 
+                            class="w-full bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white font-medium py-3 px-6 rounded-lg shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/50 flex items-center justify-center">
+                            <i class="fa fa-sign-in mr-2"></i> 加入选定的房间
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 随机匹配表单 -->
+                <div id="content-random" class="hidden">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center">
+                        <i class="fa fa-random text-primary mr-3"></i> 随机匹配对战
+                    </h3>
+                    
+                    <div class="text-center py-8">
+                        <div class="w-24 h-24 mx-auto relative mb-6">
+                            <div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+                            <div class="absolute inset-2 bg-primary/40 rounded-full animate-pulse-slow"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <i class="fa fa-users text-4xl text-primary animate-float"></i>
+                            </div>
+                        </div>
+                        
+                        <p class="text-light/80 mb-6 max-w-md mx-auto">
+                            我们正在为你寻找合适的对手...<br>
+                            匹配基于你的游戏水平和当前在线玩家
+                        </p>
+                        
+                        <div class="w-full max-w-sm mx-auto bg-white/5 border border-white/10 rounded-lg p-4">
+                            <div class="flex justify-between text-sm text-light/80 mb-2">
+                                <span>匹配进度</span>
+                                <span id="matching-progress-text">0%</span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div id="matching-progress-bar" class="h-full bg-gradient-to-r from-primary to-secondary w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <button type="button" id="cancel-matching" 
+                                class="bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-lg shadow-md transform transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20">
+                                <i class="fa fa-times mr-2"></i> 取消匹配
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏说明 -->
+        <div class="mt-12 max-w-3xl text-center">
+            <p class="text-light/60 text-sm">
+                <i class="fa fa-info-circle mr-1"></i> 纸上谈兵是一款策略对战游戏，玩家通过智谋和策略击败对手。<br>
+                支持多种游戏模式，包括经典对战、团队协作和生存模式。
+            </p>
+        </div>
+    </div>
+    
+    <!-- 模态框：创建房间成功 -->
+    <div id="modal-success" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-white/10 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 p-8 max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fa fa-check text-3xl text-green-500"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">房间创建成功！</h3>
+                <p class="text-light/80 mb-6">你的房间ID是：<span id="room-id-display" class="font-mono text-secondary">ABC123</span></p>
+                <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                    <button id="copy-room-id" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300">
+                        <i class="fa fa-copy mr-2"></i> 复制房间ID
+                    </button>
+                    <button id="share-room" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300">
+                        <i class="fa fa-share-alt mr-2"></i> 分享房间
+                    </button>
+                </div>
+                <button id="close-modal" class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300">
+                    开始等待玩家加入
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript功能脚本 -->
+    <script>
+        // 选项卡切换
+        const tabCreate = document.getElementById('tab-create');
+        const tabJoin = document.getElementById('tab-join');
+        const tabRandom = document.getElementById('tab-random');
+        const contentCreate = document.getElementById('content-create');
+        const contentJoin = document.getElementById('content-join');
+        const contentRandom = document.getElementById('content-random');
+        
+        tabCreate.addEventListener('click', () => {
+            contentCreate.classList.remove('hidden');
+            contentJoin.classList.add('hidden');
+            contentRandom.classList.add('hidden');
+            
+            tabCreate.classList.add('text-white', 'border-secondary', 'bg-secondary/10');
+            tabCreate.classList.remove('text-light/70', 'border-transparent');
+            
+            tabJoin.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabJoin.classList.add('text-light/70', 'border-transparent');
+            
+            tabRandom.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabRandom.classList.add('text-light/70', 'border-transparent');
+        });
+        
+        tabJoin.addEventListener('click', () => {
+            contentCreate.classList.add('hidden');
+            contentJoin.classList.remove('hidden');
+            contentRandom.classList.add('hidden');
+            
+            tabCreate.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabCreate.classList.add('text-light/70', 'border-transparent');
+            
+            tabJoin.classList.add('text-white', 'border-secondary', 'bg-secondary/10');
+            tabJoin.classList.remove('text-light/70', 'border-transparent');
+            
+            tabRandom.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabRandom.classList.add('text-light/70', 'border-transparent');
+        });
+        
+        tabRandom.addEventListener('click', () => {
+            contentCreate.classList.add('hidden');
+            contentJoin.classList.add('hidden');
+            contentRandom.classList.remove('hidden');
+            
+            tabCreate.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabCreate.classList.add('text-light/70', 'border-transparent');
+            
+            tabJoin.classList.remove('text-white', 'border-secondary', 'bg-secondary/10');
+            tabJoin.classList.add('text-light/70', 'border-transparent');
+            
+            tabRandom.classList.add('text-white', 'border-secondary', 'bg-secondary/10');
+            tabRandom.classList.remove('text-light/70', 'border-transparent');
+            
+            // 开始模拟匹配进度
+            startMatching();
+        });
+        
+        // 玩家数量滑块
+        const playerCountSlider = document.getElementById('player-count');
+        const playerCountValue = document.getElementById('player-count-value');
+        
+        playerCountSlider.addEventListener('input', () => {
+            playerCountValue.textContent = `${playerCountSlider.value}人`;
+        });
+        
+        // 创建房间按钮
+        const createRoomSubmit = document.getElementById('create-room-submit');
+        const modalSuccess = document.getElementById('modal-success');
+        const modalContent = document.getElementById('modal-content');
+        const closeModal = document.getElementById('close-modal');
+        const roomIdDisplay = document.getElementById('room-id-display');
+        const copyRoomId = document.getElementById('copy-room-id');
+        
+        createRoomSubmit.addEventListener('click', () => {
+            // 生成随机房间ID
+            const roomId = generateRoomId();
+            roomIdDisplay.textContent = roomId;
+            
+            // 显示模态框并添加动画
+            modalSuccess.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        });
+        
+        closeModal.addEventListener('click', () => {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalSuccess.classList.add('hidden');
+            }, 300);
+        });
+        
+        copyRoomId.addEventListener('click', () => {
+            const textToCopy = roomIdDisplay.textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // 显示复制成功提示
+                copyRoomId.innerHTML = '<i class="fa fa-check mr-2"></i> 已复制';
+                setTimeout(() => {
+                    copyRoomId.innerHTML = '<i class="fa fa-copy mr-2"></i> 复制房间ID';
+                }, 2000);
+            });
+        });
+        
+        // 生成随机房间ID
+        function generateRoomId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // 随机匹配进度
+        const matchingProgressBar = document.getElementById('matching-progress-bar');
+        const matchingProgressText = document.getElementById('matching-progress-text');
+        const cancelMatching = document.getElementById('cancel-matching');
+        let matchingInterval;
+        
+        function startMatching() {
+            let progress = 0;
+            matchingProgressBar.style.width = '0%';
+            matchingProgressText.textContent = '0%';
+            
+            // 清除之前的间隔（如果有）
+            if (matchingInterval) clearInterval(matchingInterval);
+            
+            matchingInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(matchingInterval);
+                    
+                    // 模拟匹配成功
+                    setTimeout(() => {
+                        alert('匹配成功！正在进入游戏...');
+                        // 重置匹配进度
+                        tabCreate.click();
+                    }, 1000);
+                }
+                
+                matchingProgressBar.style.width = `${progress}%`;
+                matchingProgressText.textContent = `${Math.round(progress)}%`;
+            }, 500);
+        }
+        
+        cancelMatching.addEventListener('click', () => {
+            clearInterval(matchingInterval);
+            tabCreate.click();
+        });
+        
+        // 房间列表项点击
+        const roomItems = document.querySelectorAll('#room-list > div');
+        roomItems.forEach(item => {
+            item.addEventListener('click', () => {
+                roomItems.forEach(i => i.classList.remove('border-primary', 'bg-primary/10'));
+                item.classList.add('border-primary', 'bg-primary/10');
+            });
+        });
+        
+        // 加入房间按钮
+        const joinRoomSubmit = document.getElementById('join-room-submit');
+        joinRoomSubmit.addEventListener('click', () => {
+            const selectedRoom = document.querySelector('#room-list > div.border-primary');
+            if (selectedRoom) {
+                alert('正在加入房间...');
+            } else {
+                alert('请先选择一个房间');
+            }
+        });
+    </script>
+</body>
+</html>
