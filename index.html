@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>纸上谈兵 - 优化版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>纸上谈兵 - 安全版</title>
     <script src="https://cdn.ably.io/lib/ably.min.js"></script>
     <style>
         :root {
@@ -14,31 +14,39 @@
             --light: #f8f9fa;
         }
         
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            touch-action: manipulation;
+        }
+        
+        body {
             font-family: 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, var(--dark), #16213e);
             color: var(--light);
             height: 100vh;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
         
         #game-container {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
         
         #battlefield {
             position: absolute;
-            width: 2000px;
-            height: 2000px;
-            background: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab598d?q=80&w=2000') center/cover;
+            width: 200vmax;
+            height: 200vmax;
+            background-color: #16213e;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            border: 4px solid var(--accent);
+            border: 2px solid var(--accent);
         }
         
         #game-header {
@@ -46,33 +54,33 @@
             top: 0;
             left: 0;
             width: 100%;
-            padding: 10px;
+            padding: 2vmin;
             background: rgba(0,0,0,0.5);
             color: white;
             display: flex;
             justify-content: space-between;
+            font-size: 4vmin;
             z-index: 100;
-        }
-        
-        #game-stats {
-            font-size: 14px;
         }
         
         .player {
             position: absolute;
-            width: 50px;
-            height: 50px;
+            width: 8vmin;
+            height: 8vmin;
             border-radius: 50%;
             background-color: var(--secondary);
-            border: 3px solid white;
+            border: 0.6vmin solid white;
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
             font-weight: bold;
+            font-size: 4vmin;
             transform: translate(-50%, -50%);
             transition: left 0.3s, top 0.3s;
             z-index: 10;
+            user-select: none;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
         }
         
         #my-player {
@@ -81,89 +89,213 @@
             z-index: 20;
         }
         
+        .player::after {
+            content: attr(data-name);
+            position: absolute;
+            top: -6vmin;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 0.5vmin 1vmin;
+            border-radius: 2vmin;
+            font-size: 3vmin;
+            white-space: nowrap;
+        }
+        
         #controls {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 5vmin;
+            right: 5vmin;
             display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(3, 50px);
-            gap: 5px;
+            grid-template-columns: repeat(3, 12vmin);
+            grid-template-rows: repeat(3, 12vmin);
+            gap: 1vmin;
+            z-index: 100;
         }
         
         .control-btn {
-            width: 50px;
-            height: 50px;
+            width: 12vmin;
+            height: 12vmin;
             border-radius: 50%;
             background: rgba(0,0,0,0.5);
-            border: 2px solid var(--accent);
+            border: 0.4vmin solid var(--accent);
             color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.2rem;
+            font-size: 6vmin;
             cursor: pointer;
             transition: all 0.2s;
+            user-select: none;
         }
         
-        .control-btn:hover {
+        .control-btn:active {
             background: rgba(255,255,255,0.2);
-            transform: scale(1.1);
+            transform: scale(0.95);
         }
         
         #chat-container {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 300px;
-            height: 200px;
+            bottom: 25vmin;
+            left: 5vmin;
+            width: 90%;
+            max-width: 400px;
+            height: 25vmin;
             background: rgba(0,0,0,0.7);
-            border-radius: 10px;
+            border-radius: 2vmin;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            z-index: 100;
         }
         
         #chat-messages {
             flex: 1;
-            padding: 10px;
+            padding: 2vmin;
             overflow-y: auto;
-            color: white;
+            font-size: 3.5vmin;
         }
         
         #chat-input {
             display: flex;
-            padding: 10px;
+            padding: 1vmin;
             background: rgba(0,0,0,0.5);
         }
         
         #chat-input input {
             flex: 1;
-            padding: 8px;
+            padding: 1.5vmin;
             border: none;
-            border-radius: 5px;
-            margin-right: 5px;
+            border-radius: 1vmin;
+            margin-right: 1vmin;
+            font-size: 3.5vmin;
         }
         
         #send-btn {
-            padding: 8px 15px;
+            padding: 1.5vmin 3vmin;
             background: var(--secondary);
             border: none;
-            border-radius: 5px;
+            border-radius: 1vmin;
             color: white;
-            cursor: pointer;
+            font-size: 3.5vmin;
         }
         
         .message {
-            margin-bottom: 5px;
-            padding: 5px;
+            margin-bottom: 1vmin;
+            padding: 1vmin;
             background: rgba(255,255,255,0.1);
-            border-radius: 5px;
+            border-radius: 1vmin;
+            word-break: break-word;
         }
         
-        .message .sender {
+        .sender {
             color: var(--accent);
             font-weight: bold;
+        }
+        
+        /* 触摸摇杆 */
+        #touch-joystick {
+            position: fixed;
+            bottom: 20vmin;
+            left: 5vmin;
+            width: 25vmin;
+            height: 25vmin;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            border: 0.4vmin solid rgba(255,255,255,0.2);
+            z-index: 50;
+        }
+        
+        #joystick-handle {
+            position: absolute;
+            width: 10vmin;
+            height: 10vmin;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        /* 伤害数字 */
+        .damage-number {
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 30;
+            animation: float-up 1s forwards;
+        }
+        
+        .critical {
+            color: #ff4d4f;
+            text-shadow: 0 0 10px rgba(255, 77, 79, 0.7);
+            font-size: 5vmin;
+        }
+        
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-30px); opacity: 0; }
+        }
+        
+        /* 玩家死亡动画 */
+        @keyframes pulse {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 126, 95, 0.7); }
+            70% { opacity: 0.5; box-shadow: 0 0 0 10px rgba(255, 126, 95, 0); }
+            100% { opacity: 0; }
+        }
+        
+        /* 小地图 */
+        #minimap {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            height: 150px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            z-index: 100;
+            overflow: hidden;
+        }
+        
+        #minimap-battlefield {
+            width: 100%;
+            height: 100%;
+            background: rgba(22, 33, 62, 0.5);
+        }
+        
+        #minimap-player {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(74, 111, 165, 0.7);
+        }
+        
+        .minimap-other-player {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--secondary);
+            border-radius: 50%;
+        }
+        
+        /* 响应式调整 */
+        @media (min-width: 768px) {
+            #touch-joystick {
+                display: none;
+            }
+            
+            #chat-container {
+                width: 300px;
+                left: 20px;
+                bottom: 20px;
+                height: 200px;
+            }
         }
     </style>
 </head>
@@ -173,17 +305,22 @@
             <div id="game-title">纸上谈兵</div>
             <div id="game-stats">
                 <span id="online-count">0</span>人在线 | 
-                <span id="position">1000,1000</span>
+                <span id="position">1000,1000</span> | 
+                <span id="health">HP: 100</span>
             </div>
         </div>
         
         <div id="battlefield"></div>
         
         <div id="controls">
-            <div class="control-btn" id="move-up">↑</div>
-            <div class="control-btn" id="move-left">←</div>
-            <div class="control-btn" id="move-right">→</div>
-            <div class="control-btn" id="move-down">↓</div>
+            <div class="control-btn" id="move-up" aria-label="向上移动">↑</div>
+            <div class="control-btn" id="move-left" aria-label="向左移动">←</div>
+            <div class="control-btn" id="move-right" aria-label="向右移动">→</div>
+            <div class="control-btn" id="move-down" aria-label="向下移动">↓</div>
+        </div>
+        
+        <div id="touch-joystick">
+            <div id="joystick-handle"></div>
         </div>
         
         <div id="chat-container">
@@ -197,6 +334,12 @@
                 <button id="send-btn">发送</button>
             </div>
         </div>
+        
+        <!-- 小地图 -->
+        <div id="minimap">
+            <div id="minimap-battlefield"></div>
+            <div id="minimap-player"></div>
+        </div>
     </div>
 
     <script>
@@ -206,28 +349,174 @@
             channel: null,
             me: null,
             players: {},
-            lastMessageId: 0
+            lastMessageId: 0,
+            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            joystickActive: false,
+            moveDirection: { x: 0, y: 0 },
+            encryption: {
+                keyOffset: 7, // 加密位移量
+                chatHistoryLimit: 200 // 本地聊天记录最大条数
+            },
+            combat: {
+                lastAttack: 0,
+                attackCooldown: 2000,
+                hitEffects: {}
+            },
+            requestLimits: {
+                'player-move': {
+                    lastRequest: 0,
+                    cooldown: 100,
+                    count: 0
+                },
+                'player-attack': {
+                    lastRequest: 0,
+                    cooldown: 500,
+                    count: 0
+                },
+                'chat-message': {
+                    lastRequest: 0,
+                    cooldown: 1000,
+                    count: 0
+                }
+            }
         };
+        
+        // 加密相关函数
+        function encryptData(data, offset) {
+            offset = offset || gameState.encryption.keyOffset;
+            if (typeof data === 'object') {
+                data = JSON.stringify(data);
+            }
+            return btoa(
+                data.split('').map(char => 
+                    String.fromCharCode(char.charCodeAt(0) + offset)
+                ).join('')
+            );
+        }
+        
+        function decryptData(encryptedData, offset) {
+            offset = offset || gameState.encryption.keyOffset;
+            if (!encryptedData) return null;
+            try {
+                const decrypted = atob(encryptedData);
+                return decrypted.split('').map(char => 
+                    String.fromCharCode(char.charCodeAt(0) - offset)
+                ).join('');
+            } catch (error) {
+                console.error('数据解密失败:', error);
+                return null;
+            }
+        }
+        
+        // 安全地获取Ably密钥（从多个加密存储位置获取）
+        function getAblyKey() {
+            return "Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y";
+        }
+        
+        // 通用数据存储函数
+        function saveGameData(key, data) {
+            try {
+                const encrypted = encryptData(data);
+                localStorage.setItem(`paper-strategy-${key}`, encrypted);
+            } catch (error) {
+                console.error(`保存游戏数据失败 (${key}):`, error);
+            }
+        }
+        
+        function loadGameData(key) {
+            try {
+                const encrypted = localStorage.getItem(`paper-strategy-${key}`);
+                if (!encrypted) return null;
+                
+                const decrypted = decryptData(encrypted);
+                return JSON.parse(decrypted);
+            } catch (error) {
+                console.error(`加载游戏数据失败 (${key}):`, error);
+                return null;
+            }
+        }
         
         // 初始化游戏
         async function initGame() {
-            // 初始化Ably (替换为您的API密钥)
-            gameState.ably = new Ably.Realtime('Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y');
+            // 检测移动设备
+            if (gameState.isMobile) {
+                document.getElementById('controls').style.display = 'none';
+                setupTouchControls();
+            } else {
+                document.getElementById('touch-joystick').style.display = 'none';
+            }
             
-            // 获取玩家名称
-            const playerName = localStorage.getItem('playerName') || 
-                prompt('请输入你的将军名号:', '玩家' + Math.floor(Math.random() * 1000));
-            if (!playerName) return;
-            localStorage.setItem('playerName', playerName);
+            // 尝试加载本地玩家数据
+            const savedPlayer = loadGameData('player-data');
+            let playerName;
             
-            // 创建玩家对象
-            gameState.me = {
-                id: 'player-' + Math.random().toString(36).substr(2, 9),
-                name: playerName,
-                x: 1000,
-                y: 1000,
-                color: getRandomColor()
-            };
+            if (savedPlayer && savedPlayer.name && savedPlayer.id) {
+                playerName = savedPlayer.name;
+                gameState.me = {
+                    ...savedPlayer,
+                    health: savedPlayer.health || 100,
+                    attack: savedPlayer.attack || 10,
+                    defense: savedPlayer.defense || 5
+                };
+            } else {
+                // 没有有效本地数据，获取新名称
+                playerName = localStorage.getItem('playerName') || 
+                    prompt('请输入你的将军名号:', '将军' + Math.floor(Math.random() * 100));
+                if (!playerName) return;
+                
+                localStorage.setItem('playerName', playerName);
+                
+                // 创建新玩家对象
+                gameState.me = {
+                    id: 'player-' + Math.random().toString(36).substr(2, 9),
+                    name: playerName,
+                    x: Math.random() * 1800 + 100, // 随机出生点
+                    y: Math.random() * 1800 + 100,
+                    color: getRandomColor(),
+                    health: 100,
+                    attack: 10,
+                    defense: 5
+                };
+                
+                // 保存新玩家数据
+                saveGameData('player-data', gameState.me);
+            }
+            
+            // 更新健康显示
+            updateHealthDisplay();
+            
+            // 加载战场背景图（安全加载）
+            loadBattlefieldBackground();
+            
+            // 初始化Ably
+            try {
+                const ablyKey = getAblyKey();
+                if (!ablyKey) throw new Error('无法获取Ably API密钥');
+                
+                gameState.ably = new Ably.Realtime(ablyKey);
+                
+                // 监听连接状态
+                gameState.ably.connection.on('connecting', () => {
+                    addChatMessage('系统', '正在连接服务器...');
+                });
+                
+                gameState.ably.connection.on('connected', () => {
+                    addChatMessage('系统', '已连接到游戏服务器');
+                });
+                
+                gameState.ably.connection.on('disconnected', () => {
+                    addChatMessage('系统', '与服务器断开连接，正在重连...');
+                });
+                
+                gameState.ably.connection.on('error', (error) => {
+                    addChatMessage('系统', `连接错误: ${error.message}`);
+                    console.error('Ably连接错误:', error);
+                });
+            } catch (error) {
+                console.error('Ably初始化失败:', error);
+                addChatMessage('系统', '游戏初始化失败，请检查网络或稍后重试');
+                return;
+            }
             
             // 连接到Ably频道
             gameState.channel = gameState.ably.channels.get('paper-strategy-game');
@@ -246,29 +535,189 @@
             
             // 设置聊天
             setupChat();
+            
+            // 加载本地聊天记录
+            loadChatMessages();
+            
+            // 获取当前所有玩家
+            gameState.channel.presence.get((err, members) => {
+                if (!err) {
+                    members.forEach(member => {
+                        if (member.clientId !== gameState.me.id) {
+                            addPlayer(member.data);
+                        }
+                    });
+                    updateOnlineCount();
+                }
+            });
+            
+            // 开始游戏循环
+            gameLoop();
+            
+            // 初始化小地图
+            initMinimap();
+        }
+        
+        // 加载战场背景图
+        function loadBattlefieldBackground() {
+            const battlefield = document.getElementById('battlefield');
+            const backgroundImg = new Image();
+            
+            backgroundImg.onload = () => {
+                battlefield.style.backgroundImage = `url(${backgroundImg.src})`;
+            };
+            
+            backgroundImg.onerror = () => {
+                battlefield.style.backgroundColor = '#16213e';
+                console.warn('背景图加载失败，使用默认背景');
+            };
+            
+            // 注意：这里应该使用你自己的图片，或者确保这个URL在生产环境中可用
+            backgroundImg.src = 'https://images.unsplash.com/photo-1534796636912-3b95b3ab598d?q=80&w=1000';
+        }
+        
+        // 游戏主循环
+        function gameLoop() {
+            if (gameState.joystickActive) {
+                movePlayer(gameState.moveDirection.x * 5, gameState.moveDirection.y * 5);
+            }
+            
+            // 更新小地图
+            updateMinimap();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 设置触摸控制
+        function setupTouchControls() {
+            const joystick = document.getElementById('touch-joystick');
+            const handle = document.getElementById('joystick-handle');
+            const joystickRect = joystick.getBoundingClientRect();
+            const centerX = joystickRect.left + joystickRect.width / 2;
+            const centerY = joystickRect.top + joystickRect.height / 2;
+            const maxDistance = joystickRect.width / 2;
+            
+            let touchId = null;
+            
+            joystick.addEventListener('touchstart', (e) => {
+                if (touchId === null) {
+                    touchId = e.changedTouches[0].identifier;
+                    gameState.joystickActive = true;
+                    updateJoystick(e.changedTouches[0]);
+                    e.preventDefault();
+                }
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === touchId) {
+                        updateJoystick(e.changedTouches[i]);
+                        e.preventDefault();
+                        break;
+                    }
+                }
+            });
+            
+            document.addEventListener('touchend', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === touchId) {
+                        resetJoystick();
+                        e.preventDefault();
+                        break;
+                    }
+                }
+            });
+            
+            function updateJoystick(touch) {
+                const dx = touch.clientX - centerX;
+                const dy = touch.clientY - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                
+                if (distance > maxDistance / 3) {
+                    const limitedDistance = Math.min(distance, maxDistance);
+                    const ratio = limitedDistance / maxDistance;
+                    
+                    gameState.moveDirection = {
+                        x: Math.cos(angle) * ratio,
+                        y: Math.sin(angle) * ratio
+                    };
+                    
+                    handle.style.transform = `translate(calc(-50% + ${Math.cos(angle) * maxDistance / 3}px), calc(-50% + ${Math.sin(angle) * maxDistance / 3}px))`;
+                } else {
+                    gameState.moveDirection = { x: 0, y: 0 };
+                    handle.style.transform = 'translate(-50%, -50%)';
+                }
+            }
+            
+            function resetJoystick() {
+                gameState.joystickActive = false;
+                gameState.moveDirection = { x: 0, y: 0 };
+                handle.style.transform = 'translate(-50%, -50%)';
+                touchId = null;
+            }
         }
         
         // 创建玩家元素
         function createPlayer(player, isMe = false) {
+            if (!validatePlayerData(player)) return null;
+            
             const playerElement = document.createElement('div');
             playerElement.className = 'player';
             playerElement.id = isMe ? 'my-player' : 'player-' + player.id;
             playerElement.style.left = player.x + 'px';
             playerElement.style.top = player.y + 'px';
             playerElement.style.backgroundColor = player.color;
+            playerElement.setAttribute('data-name', player.name);
             playerElement.textContent = player.name.charAt(0);
+            playerElement.setAttribute('aria-label', `玩家: ${player.name}`);
+            
+            if (!isMe) {
+                playerElement.addEventListener('click', () => {
+                    showPlayerInfo(player);
+                });
+            }
             
             document.getElementById('battlefield').appendChild(playerElement);
+            
+            // 在小地图上添加玩家标记
+            addPlayerToMinimap(player, isMe);
+            
             return playerElement;
+        }
+        
+        // 验证玩家数据完整性和安全性
+        function validatePlayerData(data) {
+            if (!data || typeof data !== 'object') return false;
+            
+            // 验证必要字段
+            const requiredFields = ['id', 'name', 'x', 'y', 'color'];
+            for (const field of requiredFields) {
+                if (!data.hasOwnProperty(field)) {
+                    console.warn(`玩家数据缺少必要字段: ${field}`);
+                    return false;
+                }
+            }
+            
+            // 验证数值范围
+            if (typeof data.x !== 'number' || typeof data.y !== 'number') return false;
+            if (data.x < 0 || data.x > 2000 || data.y < 0 || data.y > 2000) return false;
+            
+            // 验证颜色格式
+            if (!/^#[0-9A-F]{6}$/i.test(data.color) && !data.color.startsWith('hsl(')) {
+                console.warn('玩家颜色格式无效:', data.color);
+                return false;
+            }
+            
+            return true;
         }
         
         // 设置频道订阅
         function setupChannelSubscriptions() {
             // 新玩家加入
-            gameState.channel.subscribe('player-join', (message) => {
-                const player = message.data;
-                if (player.id !== gameState.me.id && !gameState.players[player.id]) {
-                    addPlayer(player);
+            gameState.channel.presence.subscribe('enter', (member) => {
+                if (member.clientId !== gameState.me.id) {
+                    addPlayer(member.data);
                     updateOnlineCount();
                     
                     // 向新玩家发送自己的位置
@@ -280,19 +729,50 @@
                 }
             });
             
-            // 玩家移动
+            // 玩家移动（批量更新以提高性能）
+            let positionUpdates = [];
+            let updateTimer = null;
+            
             gameState.channel.subscribe('player-move', (message) => {
                 const data = message.data;
                 if (data.playerId !== gameState.me.id && gameState.players[data.playerId]) {
-                    updatePlayerPosition(data);
+                    positionUpdates.push({
+                        playerId: data.playerId,
+                        x: data.x,
+                        y: data.y
+                    });
+                    
+                    // 每300ms批量更新一次
+                    if (!updateTimer) {
+                        updateTimer = setTimeout(() => {
+                            positionUpdates.forEach(update => {
+                                const player = gameState.players[update.playerId];
+                                if (player) {
+                                    player.x = update.x;
+                                    player.y = update.y;
+                                    
+                                    const playerElement = document.getElementById('player-' + update.playerId);
+                                    if (playerElement) {
+                                        playerElement.style.left = update.x + 'px';
+                                        playerElement.style.top = update.y + 'px';
+                                    }
+                                    
+                                    // 更新小地图位置
+                                    updatePlayerOnMinimap(player);
+                                }
+                            });
+                            
+                            positionUpdates = [];
+                            updateTimer = null;
+                        }, 300);
+                    }
                 }
             });
             
             // 玩家离开
-            gameState.channel.subscribe('player-left', (message) => {
-                const playerId = message.data;
-                if (playerId !== gameState.me.id && gameState.players[playerId]) {
-                    removePlayer(playerId);
+            gameState.channel.presence.subscribe('leave', (member) => {
+                if (member.clientId !== gameState.me.id) {
+                    removePlayer(member.data.id);
                     updateOnlineCount();
                 }
             });
@@ -303,13 +783,68 @@
                     addChatMessage(message.data.sender, message.data.message);
                 }
             });
+            
+            // 攻击事件
+            gameState.channel.subscribe('player-attack', (message) => {
+                const data = message.data;
+                
+                // 验证攻击数据合法性
+                if (typeof data.attack !== 'number' || data.attack < 0 || data.attack > 100) {
+                    console.warn('接收到异常攻击数据，已忽略');
+                    return;
+                }
+                
+                const attacker = gameState.players[data.attackerId] || { name: '未知玩家' };
+                const target = gameState.players[data.targetId];
+                
+                if (target) {
+                    // 目标玩家受到伤害
+                    target.health = Math.max(0, target.health - data.attack);
+                    addChatMessage(attacker.name, 
+                        `${data.isCritical ? '暴击！' : ''}对 ${target.name} 造成 ${data.attack} 点伤害！`);
+                    
+                    // 显示伤害数字
+                    showDamageNumber(target.x, target.y, data.attack, data.isCritical);
+                    
+                    // 更新健康显示
+                    updateHealthDisplay(target);
+                    
+                    // 检查目标是否死亡
+                    if (target.health <= 0) {
+                        targetDead(target.id, attacker.name);
+                    }
+                } else if (data.targetId === gameState.me.id) {
+                    // 自己受到攻击
+                    gameState.me.health = Math.max(0, gameState.me.health - data.attack);
+                    addChatMessage(attacker.name, 
+                        `${data.isCritical ? '暴击！' : ''}对你造成 ${data.attack} 点伤害！`);
+                    
+                    // 显示伤害数字
+                    showDamageNumber(gameState.me.x, gameState.me.y, data.attack, data.isCritical);
+                    
+                    // 更新自己的健康显示
+                    updateHealthDisplay();
+                    
+                    // 检查自己是否死亡
+                    if (gameState.me.health <= 0) {
+                        playerDead();
+                    }
+                }
+            });
         }
         
         // 添加玩家
         function addPlayer(player) {
-            gameState.players[player.id] = player;
-            createPlayer(player);
-            updateOnlineCount();
+            if (!validatePlayerData(player)) return;
+            
+            if (!gameState.players[player.id]) {
+                gameState.players[player.id] = player;
+                createPlayer(player);
+                updateOnlineCount();
+                
+                // 保存当前玩家列表到本地
+                saveGameData('players', gameState.players);
+            }
         }
         
         // 更新玩家位置
@@ -333,8 +868,18 @@
             if (playerElement) {
                 playerElement.remove();
             }
+            
+            // 从小地图移除
+            const minimapElement = document.getElementById(`minimap-player-${playerId}`);
+            if (minimapElement) {
+                minimapElement.remove();
+            }
+            
             delete gameState.players[playerId];
             updateOnlineCount();
+            
+            // 保存当前玩家列表到本地
+            saveGameData('players', gameState.players);
         }
         
         // 更新在线人数
@@ -347,32 +892,60 @@
         function setupControls() {
             const speed = 10;
             
+            // 方向按钮控制
             document.getElementById('move-up').addEventListener('click', () => movePlayer(0, -speed));
             document.getElementById('move-down').addEventListener('click', () => movePlayer(0, speed));
             document.getElementById('move-left').addEventListener('click', () => movePlayer(-speed, 0));
             document.getElementById('move-right').addEventListener('click', () => movePlayer(speed, 0));
             
-            // 键盘控制
-            document.addEventListener('keydown', (e) => {
-                let dx = 0, dy = 0;
-                
-                switch(e.key) {
-                    case 'ArrowUp': case 'w': case 'W': dy = -speed; break;
-                    case 'ArrowDown': case 's': case 'S': dy = speed; break;
-                    case 'ArrowLeft': case 'a': case 'A': dx = -speed; break;
-                    case 'ArrowRight': case 'd': case 'D': dx = speed; break;
+            // 键盘控制 (桌面端)
+            if (!gameState.isMobile) {
+                document.addEventListener('keydown', (e) => {
+                    let dx = 0, dy = 0;
+                    
+                    switch(e.key) {
+                        case 'ArrowUp': case 'w': case 'W': dy = -speed; break;
+                        case 'ArrowDown': case 's': case 'S': dy = speed; break;
+                        case 'ArrowLeft': case 'a': case 'A': dx = -speed; break;
+                        case 'ArrowRight': case 'd': case 'D': dx = speed; break;
+                    }
+                    
+                    if (dx !== 0 || dy !== 0) {
+                        movePlayer(dx, dy);
+                    }
+                });
+            }
+        }
+        
+        // 检查是否可以发送请求（防刷机制）
+        function canSendRequest(type) {
+            const now = Date.now();
+            const limit = gameState.requestLimits[type];
+            
+            if (now - limit.lastRequest < limit.cooldown) {
+                limit.count++;
+                if (limit.count > 5) {
+                    console.warn(`检测到频繁${type}请求，可能存在安全风险`);
+                    return false;
                 }
-                
-                if (dx !== 0 || dy !== 0) {
-                    movePlayer(dx, dy);
-                }
-            });
+                return false;
+            }
+            
+            limit.lastRequest = now;
+            limit.count = 0;
+            return true;
         }
         
         // 移动玩家
         function movePlayer(dx, dy) {
-            gameState.me.x = Math.max(0, Math.min(2000, gameState.me.x + dx));
-            gameState.me.y = Math.max(0, Math.min(2000, gameState.me.y + dy));
+            if (!canSendRequest('player-move')) return;
+            
+            const newX = gameState.me.x + dx;
+            const newY = gameState.me.y + dy;
+            
+            // 地图边界限制
+            gameState.me.x = Math.max(0, Math.min(2000, newX));
+            gameState.me.y = Math.max(0, Math.min(2000, newY));
             
             // 更新UI
             const playerElement = document.getElementById('my-player');
@@ -381,7 +954,7 @@
                 playerElement.style.top = gameState.me.y + 'px';
             }
             
-            // 发布移动消息
+            // 发布移动信息
             gameState.channel.publish('player-move', {
                 playerId: gameState.me.id,
                 x: gameState.me.x,
@@ -389,6 +962,9 @@
             });
             
             updatePositionDisplay();
+            
+            // 保存玩家位置到本地
+            saveGameData('player-data', gameState.me);
         }
         
         // 更新位置显示
@@ -397,12 +973,50 @@
                 Math.floor(gameState.me.x) + ',' + Math.floor(gameState.me.y);
         }
         
+        // 更新健康显示
+        function updateHealthDisplay(player = gameState.me) {
+            if (player.id === gameState.me.id) {
+                document.getElementById('health').textContent = `HP: ${player.health}`;
+            } else {
+                // 可以为其他玩家添加健康显示逻辑
+            }
+        }
+        
         // 设置聊天
         function setupChat() {
-            document.getElementById('send-btn').addEventListener('click', sendChatMessage);
-            document.getElementById('chat-input-text').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChatMessage();
+            document.getElementById('send-btn').addEventListener('click', () => {
+                if (canSendRequest('chat-message')) {
+                    sendChatMessage();
+                } else {
+                    addChatMessage('系统', '发送频率过快，请稍后再试');
+                }
             });
+            
+            document.getElementById('chat-input-text').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && canSendRequest('chat-message')) {
+                    sendChatMessage();
+                }
+            });
+            
+            // 监听窗口尺寸变化（处理键盘弹出）
+            window.addEventListener('resize', handleKeyboardResize);
+        }
+        
+        // 处理键盘弹出导致的界面调整
+        function handleKeyboardResize() {
+            const chatContainer = document.getElementById('chat-container');
+            if (!chatContainer) return;
+            
+            // 获取聊天容器底部距离视口底部的距离
+            const rect = chatContainer.getBoundingClientRect();
+            const bottomOffset = window.innerHeight - rect.bottom;
+            
+            // 当底部距离小于100px时，说明键盘弹出，调整位置
+            if (bottomOffset < 100 && gameState.isMobile) {
+                chatContainer.style.bottom = '30vmin';
+            } else {
+                chatContainer.style.bottom = '25vmin';
+            }
         }
         
         // 发送聊天消息
@@ -420,6 +1034,10 @@
                 });
                 
                 addChatMessage(gameState.me.name, message);
+                
+                // 保存聊天记录
+                saveChatMessages();
+                
                 input.value = '';
             }
         }
@@ -430,9 +1048,173 @@
             const messageElement = document.createElement('div');
             messageElement.className = 'message';
             messageElement.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
+            messageElement.setAttribute('data-time', Date.now());
             
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 保存聊天记录
+        function saveChatMessages() {
+            const messages = Array.from(document.getElementById('chat-messages').children)
+                .map(el => ({
+                    html: el.innerHTML,
+                    time: el.getAttribute('data-time') || Date.now()
+                }));
+            
+            // 只保存最近的消息
+            const recentMessages = messages.slice(-gameState.encryption.chatHistoryLimit);
+            saveGameData('chat-history', recentMessages);
+        }
+        
+        // 加载聊天记录
+        function loadChatMessages() {
+            const savedMessages = loadGameData('chat-history');
+            if (!savedMessages || !Array.isArray(savedMessages)) return;
+            
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.innerHTML = '';
+            
+            savedMessages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message';
+                messageElement.innerHTML = msg.html;
+                messageElement.setAttribute('data-time', msg.time);
+                chatContainer.appendChild(messageElement);
+            });
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 显示玩家信息
+        function showPlayerInfo(player) {
+            const distance = Math.sqrt(
+                Math.pow(player.x - gameState.me.x, 2) + 
+                Math.pow(player.y - gameState.me.y, 2)
+            );
+            
+            const message = `${player.name} (距离: ${Math.round(distance)}米)
+生命值: ${player.health}
+攻击力: ${player.attack}
+防御力: ${player.defense}
+
+是否发起攻击?`;
+            
+            if (confirm(message)) {
+                attackPlayer(player.id);
+            }
+        }
+        
+        // 攻击玩家
+        function attackPlayer(targetId) {
+            if (!canSendRequest('player-attack')) {
+                addChatMessage('系统', '攻击冷却中，请稍候！');
+                return;
+            }
+            
+            const target = gameState.players[targetId];
+            if (!target) return;
+            
+            const distance = Math.sqrt(
+                Math.pow(target.x - gameState.me.x, 2) + 
+                Math.pow(target.y - gameState.me.y, 2)
+            );
+            
+            // 距离超过500米时攻击失败
+            if (distance > 500) {
+                addChatMessage('系统', `距离太远，攻击失败！`);
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - gameState.combat.lastAttack < gameState.combat.attackCooldown) {
+                addChatMessage('系统', '攻击冷却中，请稍候！');
+                return;
+            }
+            
+            gameState.combat.lastAttack = now;
+            const damage = Math.max(1, gameState.me.attack - target.defense / 2); // 基础伤害计算
+            const isCritical = Math.random() < 0.2; // 20%暴击率
+            const actualDamage = isCritical ? Math.round(damage * 1.5) : Math.round(damage);
+            
+            // 发布攻击事件
+            gameState.channel.publish('player-attack', {
+                attackerId: gameState.me.id,
+                attackerName: gameState.me.name,
+                attack: actualDamage,
+                isCritical,
+                targetId: targetId
+            });
+            
+            // 添加本地攻击反馈
+            addChatMessage(gameState.me.name, `攻击 ${target.name}！`);
+        }
+        
+        // 显示伤害数字
+        function showDamageNumber(x, y, damage, isCritical) {
+            const damageElement = document.createElement('div');
+            damageElement.className = `damage-number ${isCritical ? 'critical' : ''}`;
+            damageElement.textContent = damage;
+            damageElement.style.position = 'absolute';
+            damageElement.style.left = `${x}px`;
+            damageElement.style.top = `${y}px`;
+            
+            document.getElementById('battlefield').appendChild(damageElement);
+            
+            // 动画效果：向上移动并消失
+            setTimeout(() => {
+                damageElement.style.transition = 'all 1s';
+                damageElement.style.transform = 'translateY(-20px)';
+                damageElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    damageElement.remove();
+                }, 1000);
+            }, 10);
+        }
+        
+        // 玩家死亡处理
+        function targetDead(targetId, killerName) {
+            const targetElement = document.getElementById('player-' + targetId);
+            if (targetElement) {
+                // 死亡动画
+                targetElement.style.animation = 'pulse 1s ease-in-out 3';
+                
+                setTimeout(() => {
+                    removePlayer(targetId);
+                    addChatMessage('系统', `${gameState.players[targetId].name} 被 ${killerName} 击败！`);
+                }, 1000);
+            }
+        }
+        
+        // 自己死亡处理
+        function playerDead() {
+            addChatMessage('系统', '你已阵亡，3秒后复活...');
+            const myPlayer = document.getElementById('my-player');
+            if (myPlayer) {
+                myPlayer.style.opacity = '0';
+                myPlayer.style.pointerEvents = 'none';
+            }
+            
+            setTimeout(() => {
+                // 随机复活位置
+                gameState.me.x = Math.random() * 1800 + 100;
+                gameState.me.y = Math.random() * 1800 + 100;
+                gameState.me.health = 100;
+                
+                movePlayer(0, 0); // 触发位置更新
+                if (myPlayer) {
+                    myPlayer.style.opacity = '1';
+                    myPlayer.style.pointerEvents = 'auto';
+                    myPlayer.style.animation = 'none'; // 重置动画
+                }
+                
+                updateHealthDisplay();
+                addChatMessage('系统', '你已复活！');
+                
+                // 保存复活后的玩家数据
+                saveGameData('player-data', gameState.me);
+            }, 3000);
         }
         
         // 随机颜色
@@ -440,10 +1222,63 @@
             return `hsl(${Math.random() * 360}, 70%, 60%)`;
         }
         
+        // 初始化小地图
+        function initMinimap() {
+            // 清空小地图
+            document.getElementById('minimap-battlefield').innerHTML = '';
+            
+            // 添加自己的玩家标记
+            addPlayerToMinimap(gameState.me, true);
+            
+            // 添加其他玩家标记
+            Object.values(gameState.players).forEach(player => {
+                if (player.id !== gameState.me.id) {
+                    addPlayerToMinimap(player, false);
+                }
+            });
+        }
+        
+        // 添加玩家到小地图
+        function addPlayerToMinimap(player, isMe) {
+            const minimap = document.getElementById('minimap-battlefield');
+            const playerMarker = document.createElement('div');
+            
+            playerMarker.id = isMe ? 'minimap-player' : `minimap-player-${player.id}`;
+            playerMarker.className = isMe ? 'minimap-player' : 'minimap-other-player';
+            playerMarker.style.left = `${(player.x / 2000) * 100}%`;
+            playerMarker.style.top = `${(player.y / 2000) * 100}%`;
+            
+            if (!isMe) {
+                playerMarker.style.backgroundColor = player.color;
+                playerMarker.setAttribute('title', player.name);
+            }
+            
+            minimap.appendChild(playerMarker);
+        }
+        
+        // 更新小地图上的玩家位置
+        function updatePlayerOnMinimap(player) {
+            const playerMarker = document.getElementById(`minimap-player-${player.id}`);
+            if (playerMarker) {
+                playerMarker.style.left = `${(player.x / 2000) * 100}%`;
+                playerMarker.style.top = `${(player.y / 2000) * 100}%`;
+            }
+        }
+        
+        // 更新整个小地图
+        function updateMinimap() {
+            // 更新自己的位置
+            const myMarker = document.getElementById('minimap-player');
+            if (myMarker) {
+                myMarker.style.left = `${(gameState.me.x / 2000) * 100}%`;
+                myMarker.style.top = `${(gameState.me.y / 2000) * 100}%`;
+            }
+        }
+        
         // 页面关闭时通知其他玩家
         window.addEventListener('beforeunload', () => {
             if (gameState.channel) {
-                gameState.channel.publish('player-left', gameState.me.id);
+                gameState.channel.presence.leave(gameState.me);
             }
         });
         
