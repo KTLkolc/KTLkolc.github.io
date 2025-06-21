@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>纸上谈兵 - 战场沙盘</title>
+    <title>纸上谈兵 - Ably实时版</title>
+    <script src="https://cdn.ably.io/lib/ably.min.js"></script>
     <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #ff7e5f;
+            --accent: #ffd166;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             font-family: 'Microsoft YaHei', sans-serif;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, var(--dark), #16213e);
+            color: var(--light);
+            height: 100vh;
             overflow: hidden;
-            user-select: none;
         }
         
         #game-container {
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            width: 100%;
+            height: 100%;
         }
         
         #battlefield {
@@ -29,7 +38,7 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            border: 4px solid #ffd166;
+            border: 4px solid var(--accent);
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
         
@@ -38,7 +47,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background-color: #ff7e5f;
+            background-color: var(--secondary);
             border: 3px solid white;
             display: flex;
             justify-content: center;
@@ -46,7 +55,7 @@
             color: white;
             font-weight: bold;
             transform: translate(-50%, -50%);
-            transition: left 0.3s, top 0.3s;
+            transition: all 0.3s ease;
             z-index: 10;
         }
         
@@ -64,8 +73,8 @@
         }
         
         #my-player {
-            background-color: #4a6fa5;
-            border-color: #ffd166;
+            background-color: var(--primary);
+            border-color: var(--accent);
             z-index: 20;
         }
         
@@ -84,7 +93,7 @@
             height: 50px;
             border-radius: 50%;
             background: rgba(0,0,0,0.5);
-            border: 2px solid #ffd166;
+            border: 2px solid var(--accent);
             color: white;
             display: flex;
             justify-content: center;
@@ -97,26 +106,6 @@
         .control-btn:hover {
             background: rgba(255,255,255,0.2);
             transform: scale(1.1);
-        }
-        
-        #move-up {
-            grid-column: 2;
-            grid-row: 1;
-        }
-        
-        #move-left {
-            grid-column: 1;
-            grid-row: 2;
-        }
-        
-        #move-right {
-            grid-column: 3;
-            grid-row: 2;
-        }
-        
-        #move-down {
-            grid-column: 2;
-            grid-row: 3;
         }
         
         #chat-container {
@@ -155,7 +144,7 @@
         
         #chat-input button {
             padding: 8px 15px;
-            background: #ff7e5f;
+            background: var(--secondary);
             border: none;
             border-radius: 5px;
             color: white;
@@ -170,8 +159,9 @@
         }
         
         .message .sender {
-            color: #ffd166;
+            color: var(--accent);
             font-weight: bold;
+            margin-right: 5px;
         }
         
         #game-header {
@@ -187,54 +177,18 @@
             z-index: 100;
         }
         
-        #zoom-controls {
-            position: fixed;
-            top: 60px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .zoom-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #ffd166;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        
-        #mini-map {
-            position: fixed;
-            top: 60px;
-            left: 20px;
-            width: 150px;
-            height: 150px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #ffd166;
-        }
-        
-        #mini-map-viewport {
-            position: absolute;
-            border: 2px dashed #ff7e5f;
-            pointer-events: none;
+        #online-count::before {
+            content: "👥 ";
         }
     </style>
 </head>
 <body>
     <div id="game-container">
         <div id="game-header">
-            <div id="game-title">纸上谈兵 - 战场沙盘</div>
+            <div id="game-title">纸上谈兵 - 实时战场</div>
             <div id="game-stats">
-                <span id="online-count">1</span>人在线 | 
-                位置: <span id="position">800,800</span> | 
+                <span id="online-count">0</span>人在线 | 
+                位置: <span id="position">1000,1000</span> | 
                 区域: <span id="zone">中央</span>
             </div>
         </div>
@@ -251,69 +205,115 @@
         <div id="chat-container">
             <div id="chat-messages">
                 <div class="message">
-                    <span class="sender">系统:</span> 欢迎来到战场沙盘！
+                    <span class="sender">系统:</span> 欢迎来到纸上谈兵实时战场！
                 </div>
             </div>
             <div id="chat-input">
-                <input type="text" id="chat-text" placeholder="输入聊天内容...">
+                <input type="text" id="chat-input-text" placeholder="输入消息...">
                 <button id="send-btn">发送</button>
             </div>
-        </div>
-        
-        <div id="zoom-controls">
-            <div class="zoom-btn" id="zoom-in">+</div>
-            <div class="zoom-btn" id="zoom-out">-</div>
-        </div>
-        
-        <div id="mini-map">
-            <div id="mini-map-viewport"></div>
         </div>
     </div>
 
     <script>
+        // 替换为您的Ably API密钥
+        const ABLY_API_KEY = 'Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y';
+        
         // 游戏状态
         const gameState = {
-            myPlayer: null,
-            otherPlayers: {},
-            battlefield: document.getElementById('battlefield'),
-            zoomLevel: 1,
-            offsetX: 0,
-            offsetY: 0
+            ably: null,
+            me: null,
+            players: {},
+            channel: null
         };
         
         // 初始化游戏
-        function initGame() {
-            // 创建自己的玩家
-            const playerName = prompt('请输入你的将军名号:', '将军' + Math.floor(Math.random() * 100));
-            if (!playerName) return;
+        async function initGame() {
+            // 初始化Ably
+            gameState.ably = new Ably.Realtime(ABLY_API_KEY);
             
-            gameState.myPlayer = {
+            // 获取玩家名称
+            const playerName = localStorage.getItem('playerName') || 
+                prompt('请输入你的将军名号:', '将军' + Math.floor(Math.random() * 100));
+            if (!playerName) return;
+            localStorage.setItem('playerName', playerName);
+            
+            // 创建玩家对象
+            gameState.me = {
                 id: 'player-' + Math.random().toString(36).substr(2, 9),
                 name: playerName,
                 x: 1000,
                 y: 1000,
-                color: getRandomColor()
+                color: getRandomColor(),
+                health: 100,
+                attack: 10,
+                defense: 5
             };
             
-            createPlayer(gameState.myPlayer, true);
+            // 连接到Ably频道
+            gameState.channel = gameState.ably.channels.get('paper-strategy-game', {
+                params: { rewind: '1m' } // 获取最近1分钟的消息
+            });
             
-            // 模拟其他玩家 (实际应用中应从服务器获取)
-            simulateOtherPlayers();
+            // 订阅频道事件
+            setupChannelSubscriptions();
+            
+            // 发布玩家加入消息
+            gameState.channel.publish('player-join', gameState.me);
+            
+            // 创建自己的玩家
+            createPlayer(gameState.me, true);
             
             // 设置控制
             setupControls();
             
             // 设置聊天
             setupChat();
-            
-            // 更新位置显示
-            updatePositionDisplay();
-            
-            // 初始化小地图
-            updateMiniMap();
         }
         
-        // 创建玩家
+        // 设置频道订阅
+        function setupChannelSubscriptions() {
+            // 新玩家加入
+            gameState.channel.subscribe('player-join', (message) => {
+                const player = message.data;
+                if (player.id !== gameState.me.id && !gameState.players[player.id]) {
+                    addPlayer(player);
+                    updateOnlineCount();
+                }
+            });
+            
+            // 玩家移动
+            gameState.channel.subscribe('player-move', (message) => {
+                const data = message.data;
+                if (data.playerId !== gameState.me.id && gameState.players[data.playerId]) {
+                    updatePlayerPosition(data);
+                }
+            });
+            
+            // 玩家离开
+            gameState.channel.subscribe('player-left', (message) => {
+                const playerId = message.data;
+                if (playerId !== gameState.me.id && gameState.players[playerId]) {
+                    removePlayer(playerId);
+                    updateOnlineCount();
+                }
+            });
+            
+            // 聊天消息
+            gameState.channel.subscribe('chat-message', (message) => {
+                addChatMessage(message.data.sender, message.data.message);
+            });
+            
+            // 玩家攻击
+            gameState.channel.subscribe('player-attack', (message) => {
+                const data = message.data;
+                if (data.targetId === gameState.me.id) {
+                    handleAttack(data);
+                }
+            });
+        }
+        
+        // 创建玩家元素
         function createPlayer(player, isMe = false) {
             const playerElement = document.createElement('div');
             playerElement.className = 'player';
@@ -324,51 +324,50 @@
             playerElement.setAttribute('data-name', player.name);
             playerElement.textContent = player.name.charAt(0);
             
-            gameState.battlefield.appendChild(playerElement);
+            if (!isMe) {
+                playerElement.addEventListener('click', () => showPlayerInfo(player));
+            }
+            
+            document.getElementById('battlefield').appendChild(playerElement);
             return playerElement;
         }
         
-        // 模拟其他玩家
-        function simulateOtherPlayers() {
-            const names = ['赵云', '关羽', '张飞', '吕布', '曹操', '孙权', '周瑜', '诸葛亮'];
-            const colors = ['#ff3e3e', '#3eff3e', '#3e3eff', '#ffff3e', '#ff3eff'];
-            
-            for (let i = 0; i < 10; i++) {
-                const player = {
-                    id: 'npc-' + i,
-                    name: names[i % names.length] + (i > names.length ? Math.floor(i / names.length) : ''),
-                    x: Math.random() * 1800 + 100,
-                    y: Math.random() * 1800 + 100,
-                    color: colors[i % colors.length]
-                };
+        // 添加玩家
+        function addPlayer(player) {
+            gameState.players[player.id] = player;
+            createPlayer(player);
+            updateOnlineCount();
+        }
+        
+        // 更新玩家位置
+        function updatePlayerPosition(data) {
+            const player = gameState.players[data.playerId];
+            if (player) {
+                player.x = data.x;
+                player.y = data.y;
                 
-                gameState.otherPlayers[player.id] = player;
-                createPlayer(player);
-            }
-            
-            // 模拟NPC移动
-            setInterval(() => {
-                for (const id in gameState.otherPlayers) {
-                    const player = gameState.otherPlayers[id];
-                    const dx = (Math.random() - 0.5) * 20;
-                    const dy = (Math.random() - 0.5) * 20;
-                    
-                    player.x = Math.max(100, Math.min(1900, player.x + dx));
-                    player.y = Math.max(100, Math.min(1900, player.y + dy));
-                    
-                    const playerElement = document.getElementById('player-' + player.id);
-                    if (playerElement) {
-                        playerElement.style.left = player.x + 'px';
-                        playerElement.style.top = player.y + 'px';
-                    }
+                const playerElement = document.getElementById('player-' + data.playerId);
+                if (playerElement) {
+                    playerElement.style.left = data.x + 'px';
+                    playerElement.style.top = data.y + 'px';
                 }
-            }, 100);
+            }
+        }
+        
+        // 移除玩家
+        function removePlayer(playerId) {
+            const playerElement = document.getElementById('player-' + playerId);
+            if (playerElement) {
+                playerElement.remove();
+            }
+            delete gameState.players[playerId];
         }
         
         // 设置控制
         function setupControls() {
             const speed = 20;
             
+            // 方向控制
             document.getElementById('move-up').addEventListener('click', () => movePlayer(0, -speed));
             document.getElementById('move-down').addEventListener('click', () => movePlayer(0, speed));
             document.getElementById('move-left').addEventListener('click', () => movePlayer(-speed, 0));
@@ -389,78 +388,77 @@
                     movePlayer(dx, dy);
                 }
             });
-            
-            // 缩放控制
-            document.getElementById('zoom-in').addEventListener('click', () => zoom(0.1));
-            document.getElementById('zoom-out').addEventListener('click', () => zoom(-0.1));
         }
         
         // 移动玩家
         function movePlayer(dx, dy) {
-            if (!gameState.myPlayer) return;
+            gameState.me.x = Math.max(0, Math.min(2000, gameState.me.x + dx));
+            gameState.me.y = Math.max(0, Math.min(2000, gameState.me.y + dy));
             
-            gameState.myPlayer.x = Math.max(100, Math.min(1900, gameState.myPlayer.x + dx));
-            gameState.myPlayer.y = Math.max(100, Math.min(1900, gameState.myPlayer.y + dy));
-            
+            // 更新UI
             const playerElement = document.getElementById('my-player');
             if (playerElement) {
-                playerElement.style.left = gameState.myPlayer.x + 'px';
-                playerElement.style.top = gameState.myPlayer.y + 'px';
+                playerElement.style.left = gameState.me.x + 'px';
+                playerElement.style.top = gameState.me.y + 'px';
             }
             
+            // 发布移动消息
+            gameState.channel.publish('player-move', {
+                playerId: gameState.me.id,
+                x: gameState.me.x,
+                y: gameState.me.y
+            });
+            
             updatePositionDisplay();
-            updateMiniMap();
-            centerViewport();
         }
         
         // 更新位置显示
         function updatePositionDisplay() {
-            if (!gameState.myPlayer) return;
-            
             document.getElementById('position').textContent = 
-                Math.floor(gameState.myPlayer.x) + ',' + Math.floor(gameState.myPlayer.y);
+                Math.floor(gameState.me.x) + ',' + Math.floor(gameState.me.y);
             
             // 确定区域
             let zone = '中央';
-            if (gameState.myPlayer.x < 800 && gameState.myPlayer.y < 800) zone = '西北';
-            else if (gameState.myPlayer.x >= 1200 && gameState.myPlayer.y < 800) zone = '东北';
-            else if (gameState.myPlayer.x < 800 && gameState.myPlayer.y >= 1200) zone = '西南';
-            else if (gameState.myPlayer.x >= 1200 && gameState.myPlayer.y >= 1200) zone = '东南';
+            if (gameState.me.x < 800 && gameState.me.y < 800) zone = '西北';
+            else if (gameState.me.x >= 1200 && gameState.me.y < 800) zone = '东北';
+            else if (gameState.me.x < 800 && gameState.me.y >= 1200) zone = '西南';
+            else if (gameState.me.x >= 1200 && gameState.me.y >= 1200) zone = '东南';
             
             document.getElementById('zone').textContent = zone;
         }
         
-        // 设置聊天
-        function setupChat() {
-            const chatInput = document.getElementById('chat-text');
-            const chatMessages = document.getElementById('chat-messages');
-            
-            document.getElementById('send-btn').addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendMessage();
-            });
-            
-            // 模拟接收消息
-            setInterval(() => {
-                if (Math.random() > 0.7) {
-                    const names = Object.values(gameState.otherPlayers).map(p => p.name);
-                    const name = names[Math.floor(Math.random() * names.length)];
-                    addMessage(name, getRandomMessage());
-                }
-            }, 3000);
+        // 更新在线人数
+        function updateOnlineCount() {
+            document.getElementById('online-count').textContent = 
+                Object.keys(gameState.players).length + 1; // 包括自己
         }
         
-        function sendMessage() {
-            const chatInput = document.getElementById('chat-text');
-            const message = chatInput.value.trim();
+        // 设置聊天
+        function setupChat() {
+            document.getElementById('send-btn').addEventListener('click', sendChatMessage);
+            document.getElementById('chat-input-text').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+        }
+        
+        // 发送聊天消息
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input-text');
+            const message = input.value.trim();
             
-            if (message && gameState.myPlayer) {
-                addMessage(gameState.myPlayer.name, message);
-                chatInput.value = '';
+            if (message) {
+                gameState.channel.publish('chat-message', {
+                    sender: gameState.me.name,
+                    message: message
+                });
+                
+                addChatMessage(gameState.me.name, message);
+                input.value = '';
             }
         }
         
-        function addMessage(sender, message) {
+        // 添加聊天消息
+        function addChatMessage(sender, message) {
             const chatMessages = document.getElementById('chat-messages');
             const messageElement = document.createElement('div');
             messageElement.className = 'message';
@@ -470,65 +468,56 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
-        function getRandomMessage() {
-            const messages = [
-                "全军出击！",
-                "发现敌军！",
-                "请求支援！",
-                "我军大捷！",
-                "粮草充足，继续前进！",
-                "敌人在东北方向！",
-                "布阵防守！",
-                "骑兵准备冲锋！",
-                "弓箭手就位！",
-                "谋士有何良策？"
-            ];
-            return messages[Math.floor(Math.random() * messages.length)];
+        // 显示玩家信息
+        function showPlayerInfo(player) {
+            const distance = Math.sqrt(
+                Math.pow(player.x - gameState.me.x, 2) + 
+                Math.pow(player.y - gameState.me.y, 2)
+            );
+            
+            const message = `攻击 ${player.name} (距离: ${Math.round(distance)}米)?`;
+            if (confirm(message)) {
+                attackPlayer(player.id);
+            }
         }
         
-        // 缩放控制
-        function zoom(delta) {
-            gameState.zoomLevel = Math.max(0.5, Math.min(2, gameState.zoomLevel + delta));
-            gameState.battlefield.style.transform = 
-                `translate(-50%, -50%) scale(${gameState.zoomLevel})`;
-            updateMiniMap();
+        // 攻击玩家
+        function attackPlayer(targetId) {
+            gameState.channel.publish('player-attack', {
+                attackerId: gameState.me.id,
+                attackerName: gameState.me.name,
+                attack: gameState.me.attack,
+                targetId: targetId
+            });
         }
         
-        // 更新小地图
-        function updateMiniMap() {
-            if (!gameState.myPlayer) return;
+        // 处理被攻击
+        function handleAttack(data) {
+            const damage = Math.max(1, data.attack - gameState.me.defense);
+            gameState.me.health -= damage;
             
-            const viewport = document.getElementById('mini-map-viewport');
-            const scale = 150 / 2000; // 小地图缩放比例
+            alert(`${data.attackerName} 对你造成了 ${damage} 点伤害！`);
             
-            viewport.style.width = (window.innerWidth * scale / gameState.zoomLevel) + 'px';
-            viewport.style.height = (window.innerHeight * scale / gameState.zoomLevel) + 'px';
-            viewport.style.left = (gameState.myPlayer.x * scale - parseInt(viewport.style.width) / 2) + 'px';
-            viewport.style.top = (gameState.myPlayer.y * scale - parseInt(viewport.style.height) / 2) + 'px';
-        }
-        
-        // 居中视口
-        function centerViewport() {
-            if (!gameState.myPlayer) return;
-            
-            const container = document.getElementById('game-container');
-            const rect = container.getBoundingClientRect();
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const targetX = -gameState.myPlayer.x * gameState.zoomLevel + centerX;
-            const targetY = -gameState.myPlayer.y * gameState.zoomLevel + centerY;
-            
-            gameState.battlefield.style.left = '50%';
-            gameState.battlefield.style.top = '50%';
-            gameState.battlefield.style.marginLeft = targetX + 'px';
-            gameState.battlefield.style.marginTop = targetY + 'px';
+            if (gameState.me.health <= 0) {
+                alert('你已被击败！');
+                gameState.channel.publish('player-defeated', {
+                    winnerId: data.attackerId,
+                    loserId: gameState.me.id
+                });
+            }
         }
         
         // 随机颜色
         function getRandomColor() {
             return `hsl(${Math.random() * 360}, 70%, 60%)`;
         }
+        
+        // 页面关闭时通知其他玩家
+        window.addEventListener('beforeunload', () => {
+            if (gameState.channel) {
+                gameState.channel.publish('player-left', gameState.me.id);
+            }
+        });
         
         // 启动游戏
         window.onload = initGame;
