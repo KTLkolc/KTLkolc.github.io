@@ -1,131 +1,143 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <!-- 在<head>部分添加Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>纸上谈兵 - 游戏进行中</title>
-    <!-- 引入Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入Font Awesome -->
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    
-    <!-- 配置Tailwind自定义颜色和字体 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#165DFF',
-                        secondary: '#FF7D00',
-                        accent: '#FF4D4F',
-                        dark: '#1D2129',
-                        light: '#F2F3F5'
-                    },
-                    fontFamily: {
-                        inter: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
+    <title>纸上谈兵 - GitHub Pages版</title>
+    <script src="https://cdn.ably.io/lib/ably.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #gameMap { 
+            width: 1600px; height: 1600px; 
+            background: url('map-bg.jpg') center/cover;
+            position: relative;
         }
-    </script>
+        .player {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border: 3px solid;
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-dark to-primary min-h-screen font-inter text-light overflow-x-hidden">
-    <!-- 游戏界面内容 -->
-    <div id="game-container" class="relative min-h-screen flex flex-col items-center justify-center px-4 py-8 z-10">
-        <h1 class="text-3xl font-bold text-white mb-4">游戏房间: <span id="current-room-id"></span></h1>
-        <div id="players-list" class="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-xl p-4 mb-6">
-            <!-- 玩家列表将在这里动态生成 -->
-        </div>
-        <div id="game-board" class="w-full max-w-2xl bg-white/10 backdrop-blur-xl rounded-xl p-6">
-            <!-- 游戏棋盘将在这里渲染 -->
-        </div>
-    </div>
-
+<body>
+    <div id="gameMap"></div>
+    
     <script>
-        // 初始化Firebase
-        const firebaseConfig = {
-            apiKey:process.env.FIREBASE_API_KEY,
-            authDomain: "paper-strategy-game.firebaseapp.com",
-            projectId: "paper-strategy-game",
-            storageBucket: "paper-strategy-game.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdefghijklmnopqrstuv"
+        // 初始化Ably (替换为您的API密钥)
+        const ably = new Ably.Realtime('Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y');
+        const channel = ably.channels.get('paper-strategy-room');
+        
+        // 玩家状态
+        const myPlayer = {
+            id: 'player-' + Math.random().toString(36).substr(2, 9),
+            name: localStorage.getItem('playerName') || 
+                  prompt('请输入你的名字:', '玩家' + Math.floor(Math.random() * 1000)),
+            x: 800,
+            y: 800,
+            color: getRandomColor()
         };
         
-        // 初始化Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        // 保存玩家名称
+        localStorage.setItem('playerName', myPlayer.name);
         
-        // 匿名登录
-        auth.signInAnonymously()
-            .then(() => {
-                console.log("匿名登录成功");
-            })
-            .catch((error) => {
-                console.error("匿名登录失败:", error);
-            });
+        // 创建自己的玩家
+        createPlayer(myPlayer, true);
         
-        // 获取房间ID
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('roomId');
+        // 订阅其他玩家移动
+        channel.subscribe('player-move', updatePlayerPosition);
         
-        if (!roomId) {
-            alert('无效的房间ID');
-            window.location.href = 'index.html';
-        }
+        // 订阅新玩家加入
+        channel.subscribe('player-join', addPlayer);
         
-        document.getElementById('current-room-id').textContent = roomId;
+        // 订阅玩家离开
+        channel.subscribe('player-left', removePlayer);
         
-        // 监听房间状态
-        const roomRef = db.collection('rooms').doc(roomId);
+        // 加入游戏
+        channel.publish('player-join', myPlayer);
         
-        roomRef.onSnapshot((doc) => {
-            const roomData = doc.data();
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            const speed = 10;
+            let dx = 0, dy = 0;
             
-            if (!roomData) {
-                alert('房间已不存在');
-                window.location.href = 'index.html';
-                return;
+            switch(e.key) {
+                case 'ArrowUp': case 'w': dy = -speed; break;
+                case 'ArrowDown': case 's': dy = speed; break;
+                case 'ArrowLeft': case 'a': dx = -speed; break;
+                case 'ArrowRight': case 'd': dx = speed; break;
             }
             
-            // 更新玩家列表
-            updatePlayersList(roomData.players || []);
-            
-            // 根据游戏状态更新界面
-            if (roomData.status === 'playing') {
-                renderGameBoard(roomData.gameState);
+            if (dx !== 0 || dy !== 0) {
+                myPlayer.x = Math.max(0, Math.min(1600, myPlayer.x + dx));
+                myPlayer.y = Math.max(0, Math.min(1600, myPlayer.y + dy));
+                
+                // 发布移动消息
+                channel.publish('player-move', {
+                    id: myPlayer.id,
+                    x: myPlayer.x,
+                    y: myPlayer.y
+                });
+                
+                updateMyPosition();
             }
         });
         
-        function updatePlayersList(players) {
-            const playersList = document.getElementById('players-list');
-            playersList.innerHTML = '<h3 class="text-xl font-semibold text-white mb-4">玩家列表</h3>';
+        // 玩家元素创建
+        function createPlayer(player, isMe = false) {
+            const playerEl = document.createElement('div');
+            playerEl.className = 'player';
+            playerEl.id = player.id;
+            playerEl.style.left = player.x + 'px';
+            playerEl.style.top = player.y + 'px';
+            playerEl.style.backgroundColor = player.color;
+            playerEl.style.borderColor = isMe ? '#fff' : '#000';
+            playerEl.textContent = player.name.charAt(0);
+            playerEl.title = player.name;
             
-            players.forEach(player => {
-                const playerElement = document.createElement('div');
-                playerElement.className = 'flex items-center py-2 border-b border-white/10 last:border-0';
-                playerElement.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-${player.ready ? 'green' : 'red'}-500/20 flex items-center justify-center mr-3">
-                        <i class="fa fa-${player.ready ? 'check' : 'user'} text-xs"></i>
-                    </div>
-                    <span class="font-medium">${player.name}</span>
-                `;
-                playersList.appendChild(playerElement);
-            });
+            document.getElementById('gameMap').appendChild(playerEl);
+            return playerEl;
         }
         
-        function renderGameBoard(gameState) {
-            // 根据你的游戏逻辑实现棋盘渲染
-            const gameBoard = document.getElementById('game-board');
-            gameBoard.innerHTML = '<h3 class="text-xl font-semibold text-white mb-4">游戏进行中</h3>';
-            
-            // 这里添加你的游戏逻辑和UI
+        function addPlayer(player) {
+            if (player.id !== myPlayer.id && !document.getElementById(player.id)) {
+                createPlayer(player);
+            }
         }
+        
+        function updatePlayerPosition(data) {
+            const playerEl = document.getElementById(data.id);
+            if (playerEl) {
+                playerEl.style.left = data.x + 'px';
+                playerEl.style.top = data.y + 'px';
+            }
+        }
+        
+        function updateMyPosition() {
+            const playerEl = document.getElementById(myPlayer.id);
+            if (playerEl) {
+                playerEl.style.left = myPlayer.x + 'px';
+                playerEl.style.top = myPlayer.y + 'px';
+            }
+        }
+        
+        function removePlayer(data) {
+            const playerEl = document.getElementById(data.id);
+            if (playerEl) {
+                playerEl.remove();
+            }
+        }
+        
+        function getRandomColor() {
+            return `hsl(${Math.random() * 360}, 70%, 60%)`;
+        }
+        
+        // 离开时通知其他玩家
+        window.addEventListener('beforeunload', () => {
+            channel.publish('player-left', { id: myPlayer.id });
+        });
     </script>
 </body>
 </html>
