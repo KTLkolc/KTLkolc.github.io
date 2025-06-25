@@ -193,7 +193,6 @@
             font-weight: bold;
         }
         
-        /* 触摸摇杆 */
         #touch-joystick {
             position: fixed;
             bottom: 20vmin;
@@ -217,7 +216,6 @@
             transform: translate(-50%, -50%);
         }
         
-        /* 伤害数字 */
         .damage-number {
             position: absolute;
             font-weight: bold;
@@ -237,14 +235,12 @@
             100% { transform: translateY(-30px); opacity: 0; }
         }
         
-        /* 玩家死亡动画 */
         @keyframes pulse {
             0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 126, 95, 0.7); }
             70% { opacity: 0.5; box-shadow: 0 0 0 10px rgba(255, 126, 95, 0); }
             100% { opacity: 0; }
         }
         
-        /* 小地图 */
         #minimap {
             position: fixed;
             top: 10px;
@@ -284,7 +280,6 @@
             border-radius: 50%;
         }
         
-        /* 响应式调整 */
         @media (min-width: 768px) {
             #touch-joystick {
                 display: none;
@@ -313,10 +308,10 @@
         <div id="battlefield"></div>
         
         <div id="controls">
-            <div class="control-btn" id="move-up" aria-label="向上移动">↑</div>
-            <div class="control-btn" id="move-left" aria-label="向左移动">←</div>
-            <div class="control-btn" id="move-right" aria-label="向右移动">→</div>
-            <div class="control-btn" id="move-down" aria-label="向下移动">↓</div>
+            <div class="control-btn" id="move-up">↑</div>
+            <div class="control-btn" id="move-left">←</div>
+            <div class="control-btn" id="move-right">→</div>
+            <div class="control-btn" id="move-down">↓</div>
         </div>
         
         <div id="touch-joystick">
@@ -335,7 +330,6 @@
             </div>
         </div>
         
-        <!-- 小地图 -->
         <div id="minimap">
             <div id="minimap-battlefield"></div>
             <div id="minimap-player"></div>
@@ -354,8 +348,8 @@
             joystickActive: false,
             moveDirection: { x: 0, y: 0 },
             encryption: {
-                keyOffset: 7, // 加密位移量
-                chatHistoryLimit: 200 // 本地聊天记录最大条数
+                keyOffset: 7,
+                chatHistoryLimit: 200
             },
             combat: {
                 lastAttack: 0,
@@ -381,7 +375,7 @@
             }
         };
         
-        // 加密相关函数
+        // 加密函数
         function encryptData(data, offset) {
             offset = offset || gameState.encryption.keyOffset;
             if (typeof data === 'object') {
@@ -408,12 +402,25 @@
             }
         }
         
-        // 安全地获取Ably密钥（从多个加密存储位置获取）
-        function getAblyKey() {
-            return "Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y";
+        // 获取Ably Token（安全方式）
+        async function getAblyToken() {
+            try {
+                // 这里应该是从你的后端获取临时Token
+                // 示例：const response = await fetch('/api/get-ably-token');
+                // return await response.json();
+                
+                // 临时方案（仅用于演示，生产环境不要这样用）
+                return {
+                    key: "Oisy4A.7B4RLg:GhQziK7Q4iDLdwpg8MDTIyql6csRSGse13FAhqxgJ8Y",
+                    clientId: 'player-' + Math.random().toString(36).substr(2, 9)
+                };
+            } catch (error) {
+                console.error('获取Ably Token失败:', error);
+                return null;
+            }
         }
         
-        // 通用数据存储函数
+        // 数据存储
         function saveGameData(key, data) {
             try {
                 const encrypted = encryptData(data);
@@ -446,7 +453,7 @@
                 document.getElementById('touch-joystick').style.display = 'none';
             }
             
-            // 尝试加载本地玩家数据
+            // 加载或创建玩家数据
             const savedPlayer = loadGameData('player-data');
             let playerName;
             
@@ -459,18 +466,16 @@
                     defense: savedPlayer.defense || 5
                 };
             } else {
-                // 没有有效本地数据，获取新名称
                 playerName = localStorage.getItem('playerName') || 
                     prompt('请输入你的将军名号:', '将军' + Math.floor(Math.random() * 100));
                 if (!playerName) return;
                 
                 localStorage.setItem('playerName', playerName);
                 
-                // 创建新玩家对象
                 gameState.me = {
                     id: 'player-' + Math.random().toString(36).substr(2, 9),
                     name: playerName,
-                    x: Math.random() * 1800 + 100, // 随机出生点
+                    x: Math.random() * 1800 + 100,
                     y: Math.random() * 1800 + 100,
                     color: getRandomColor(),
                     health: 100,
@@ -478,24 +483,22 @@
                     defense: 5
                 };
                 
-                // 保存新玩家数据
                 saveGameData('player-data', gameState.me);
             }
             
-            // 更新健康显示
             updateHealthDisplay();
-            
-            // 加载战场背景图（安全加载）
             loadBattlefieldBackground();
             
-            // 初始化Ably
+            // 初始化Ably连接
             try {
-                const ablyKey = getAblyKey();
-                if (!ablyKey) throw new Error('无法获取Ably API密钥');
+                const token = await getAblyToken();
+                if (!token) throw new Error('无法获取Ably Token');
                 
-                gameState.ably = new Ably.Realtime(ablyKey);
+                gameState.ably = new Ably.Realtime({
+                    key: token.key,
+                    clientId: token.clientId
+                });
                 
-                // 监听连接状态
                 gameState.ably.connection.on('connecting', () => {
                     addChatMessage('系统', '正在连接服务器...');
                 });
@@ -512,59 +515,57 @@
                     addChatMessage('系统', `连接错误: ${error.message}`);
                     console.error('Ably连接错误:', error);
                 });
+                
+                // 连接到频道
+                gameState.channel = gameState.ably.channels.get('paper-strategy-game');
+                
+                // 设置订阅
+                setupChannelSubscriptions();
+                
+                // 加入游戏
+                await gameState.channel.presence.enter(gameState.me);
+                
+                // 创建自己的玩家
+                createPlayer(gameState.me, true);
+                
+                // 设置控制
+                setupControls();
+                
+                // 设置聊天
+                setupChat();
+                
+                // 加载聊天记录
+                loadChatMessages();
+                
+                // 获取当前在线玩家
+                const members = await gameState.channel.presence.get();
+                members.forEach(member => {
+                    if (member.clientId !== gameState.me.id) {
+                        addPlayer(member.data);
+                    }
+                });
+                updateOnlineCount();
+                
+                // 开始游戏循环
+                gameLoop();
+                
+                // 初始化小地图
+                initMinimap();
+                
             } catch (error) {
-                console.error('Ably初始化失败:', error);
-                addChatMessage('系统', '游戏初始化失败，请检查网络或稍后重试');
-                return;
+                console.error('游戏初始化失败:', error);
+                addChatMessage('系统', '游戏初始化失败，请刷新页面重试');
             }
-            
-            // 连接到Ably频道
-            gameState.channel = gameState.ably.channels.get('paper-strategy-game');
-            
-            // 订阅频道事件
-            setupChannelSubscriptions();
-            
-            // 发布玩家加入消息
-            gameState.channel.publish('player-join', gameState.me);
-            
-            // 创建自己的玩家
-            createPlayer(gameState.me, true);
-            
-            // 设置控制
-            setupControls();
-            
-            // 设置聊天
-            setupChat();
-            
-            // 加载本地聊天记录
-            loadChatMessages();
-            
-            // 获取当前所有玩家
-            gameState.channel.presence.get((err, members) => {
-                if (!err) {
-                    members.forEach(member => {
-                        if (member.clientId !== gameState.me.id) {
-                            addPlayer(member.data);
-                        }
-                    });
-                    updateOnlineCount();
-                }
-            });
-            
-            // 开始游戏循环
-            gameLoop();
-            
-            // 初始化小地图
-            initMinimap();
         }
         
-        // 加载战场背景图
+        // 加载战场背景
         function loadBattlefieldBackground() {
             const battlefield = document.getElementById('battlefield');
             const backgroundImg = new Image();
             
             backgroundImg.onload = () => {
                 battlefield.style.backgroundImage = `url(${backgroundImg.src})`;
+                battlefield.style.backgroundSize = 'cover';
             };
             
             backgroundImg.onerror = () => {
@@ -572,7 +573,6 @@
                 console.warn('背景图加载失败，使用默认背景');
             };
             
-            // 注意：这里应该使用你自己的图片，或者确保这个URL在生产环境中可用
             backgroundImg.src = 'https://images.unsplash.com/photo-1534796636912-3b95b3ab598d?q=80&w=1000';
         }
         
@@ -582,9 +582,7 @@
                 movePlayer(gameState.moveDirection.x * 5, gameState.moveDirection.y * 5);
             }
             
-            // 更新小地图
             updateMinimap();
-            
             requestAnimationFrame(gameLoop);
         }
         
@@ -679,18 +677,15 @@
             }
             
             document.getElementById('battlefield').appendChild(playerElement);
-            
-            // 在小地图上添加玩家标记
             addPlayerToMinimap(player, isMe);
             
             return playerElement;
         }
         
-        // 验证玩家数据完整性和安全性
+        // 验证玩家数据
         function validatePlayerData(data) {
             if (!data || typeof data !== 'object') return false;
             
-            // 验证必要字段
             const requiredFields = ['id', 'name', 'x', 'y', 'color'];
             for (const field of requiredFields) {
                 if (!data.hasOwnProperty(field)) {
@@ -699,11 +694,9 @@
                 }
             }
             
-            // 验证数值范围
             if (typeof data.x !== 'number' || typeof data.y !== 'number') return false;
             if (data.x < 0 || data.x > 2000 || data.y < 0 || data.y > 2000) return false;
             
-            // 验证颜色格式
             if (!/^#[0-9A-F]{6}$/i.test(data.color) && !data.color.startsWith('hsl(')) {
                 console.warn('玩家颜色格式无效:', data.color);
                 return false;
@@ -729,7 +722,7 @@
                 }
             });
             
-            // 玩家移动（批量更新以提高性能）
+            // 玩家移动
             let positionUpdates = [];
             let updateTimer = null;
             
@@ -742,7 +735,6 @@
                         y: data.y
                     });
                     
-                    // 每300ms批量更新一次
                     if (!updateTimer) {
                         updateTimer = setTimeout(() => {
                             positionUpdates.forEach(update => {
@@ -757,7 +749,6 @@
                                         playerElement.style.top = update.y + 'px';
                                     }
                                     
-                                    // 更新小地图位置
                                     updatePlayerOnMinimap(player);
                                 }
                             });
@@ -788,7 +779,6 @@
             gameState.channel.subscribe('player-attack', (message) => {
                 const data = message.data;
                 
-                // 验证攻击数据合法性
                 if (typeof data.attack !== 'number' || data.attack < 0 || data.attack > 100) {
                     console.warn('接收到异常攻击数据，已忽略');
                     return;
@@ -798,34 +788,24 @@
                 const target = gameState.players[data.targetId];
                 
                 if (target) {
-                    // 目标玩家受到伤害
                     target.health = Math.max(0, target.health - data.attack);
                     addChatMessage(attacker.name, 
                         `${data.isCritical ? '暴击！' : ''}对 ${target.name} 造成 ${data.attack} 点伤害！`);
                     
-                    // 显示伤害数字
                     showDamageNumber(target.x, target.y, data.attack, data.isCritical);
-                    
-                    // 更新健康显示
                     updateHealthDisplay(target);
                     
-                    // 检查目标是否死亡
                     if (target.health <= 0) {
                         targetDead(target.id, attacker.name);
                     }
                 } else if (data.targetId === gameState.me.id) {
-                    // 自己受到攻击
                     gameState.me.health = Math.max(0, gameState.me.health - data.attack);
                     addChatMessage(attacker.name, 
                         `${data.isCritical ? '暴击！' : ''}对你造成 ${data.attack} 点伤害！`);
                     
-                    // 显示伤害数字
                     showDamageNumber(gameState.me.x, gameState.me.y, data.attack, data.isCritical);
-                    
-                    // 更新自己的健康显示
                     updateHealthDisplay();
                     
-                    // 检查自己是否死亡
                     if (gameState.me.health <= 0) {
                         playerDead();
                     }
@@ -841,24 +821,7 @@
                 gameState.players[player.id] = player;
                 createPlayer(player);
                 updateOnlineCount();
-                
-                // 保存当前玩家列表到本地
                 saveGameData('players', gameState.players);
-            }
-        }
-        
-        // 更新玩家位置
-        function updatePlayerPosition(data) {
-            const player = gameState.players[data.playerId];
-            if (player) {
-                player.x = data.x;
-                player.y = data.y;
-                
-                const playerElement = document.getElementById('player-' + data.playerId);
-                if (playerElement) {
-                    playerElement.style.left = data.x + 'px';
-                    playerElement.style.top = data.y + 'px';
-                }
             }
         }
         
@@ -869,7 +832,6 @@
                 playerElement.remove();
             }
             
-            // 从小地图移除
             const minimapElement = document.getElementById(`minimap-player-${playerId}`);
             if (minimapElement) {
                 minimapElement.remove();
@@ -877,28 +839,24 @@
             
             delete gameState.players[playerId];
             updateOnlineCount();
-            
-            // 保存当前玩家列表到本地
             saveGameData('players', gameState.players);
         }
         
         // 更新在线人数
         function updateOnlineCount() {
             document.getElementById('online-count').textContent = 
-                Object.keys(gameState.players).length + 1; // 包括自己
+                Object.keys(gameState.players).length + 1;
         }
         
         // 设置控制
         function setupControls() {
             const speed = 10;
             
-            // 方向按钮控制
             document.getElementById('move-up').addEventListener('click', () => movePlayer(0, -speed));
             document.getElementById('move-down').addEventListener('click', () => movePlayer(0, speed));
             document.getElementById('move-left').addEventListener('click', () => movePlayer(-speed, 0));
             document.getElementById('move-right').addEventListener('click', () => movePlayer(speed, 0));
             
-            // 键盘控制 (桌面端)
             if (!gameState.isMobile) {
                 document.addEventListener('keydown', (e) => {
                     let dx = 0, dy = 0;
@@ -917,7 +875,7 @@
             }
         }
         
-        // 检查是否可以发送请求（防刷机制）
+        // 检查请求频率
         function canSendRequest(type) {
             const now = Date.now();
             const limit = gameState.requestLimits[type];
@@ -943,18 +901,15 @@
             const newX = gameState.me.x + dx;
             const newY = gameState.me.y + dy;
             
-            // 地图边界限制
             gameState.me.x = Math.max(0, Math.min(2000, newX));
             gameState.me.y = Math.max(0, Math.min(2000, newY));
             
-            // 更新UI
             const playerElement = document.getElementById('my-player');
             if (playerElement) {
                 playerElement.style.left = gameState.me.x + 'px';
                 playerElement.style.top = gameState.me.y + 'px';
             }
             
-            // 发布移动信息
             gameState.channel.publish('player-move', {
                 playerId: gameState.me.id,
                 x: gameState.me.x,
@@ -962,8 +917,6 @@
             });
             
             updatePositionDisplay();
-            
-            // 保存玩家位置到本地
             saveGameData('player-data', gameState.me);
         }
         
@@ -977,8 +930,6 @@
         function updateHealthDisplay(player = gameState.me) {
             if (player.id === gameState.me.id) {
                 document.getElementById('health').textContent = `HP: ${player.health}`;
-            } else {
-                // 可以为其他玩家添加健康显示逻辑
             }
         }
         
@@ -998,20 +949,17 @@
                 }
             });
             
-            // 监听窗口尺寸变化（处理键盘弹出）
             window.addEventListener('resize', handleKeyboardResize);
         }
         
-        // 处理键盘弹出导致的界面调整
+        // 处理键盘弹出
         function handleKeyboardResize() {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
             
-            // 获取聊天容器底部距离视口底部的距离
             const rect = chatContainer.getBoundingClientRect();
             const bottomOffset = window.innerHeight - rect.bottom;
             
-            // 当底部距离小于100px时，说明键盘弹出，调整位置
             if (bottomOffset < 100 && gameState.isMobile) {
                 chatContainer.style.bottom = '30vmin';
             } else {
@@ -1034,10 +982,7 @@
                 });
                 
                 addChatMessage(gameState.me.name, message);
-                
-                // 保存聊天记录
                 saveChatMessages();
-                
                 input.value = '';
             }
         }
@@ -1062,7 +1007,6 @@
                     time: el.getAttribute('data-time') || Date.now()
                 }));
             
-            // 只保存最近的消息
             const recentMessages = messages.slice(-gameState.encryption.chatHistoryLimit);
             saveGameData('chat-history', recentMessages);
         }
@@ -1120,7 +1064,6 @@
                 Math.pow(target.y - gameState.me.y, 2)
             );
             
-            // 距离超过500米时攻击失败
             if (distance > 500) {
                 addChatMessage('系统', `距离太远，攻击失败！`);
                 return;
@@ -1133,11 +1076,10 @@
             }
             
             gameState.combat.lastAttack = now;
-            const damage = Math.max(1, gameState.me.attack - target.defense / 2); // 基础伤害计算
-            const isCritical = Math.random() < 0.2; // 20%暴击率
+            const damage = Math.max(1, gameState.me.attack - target.defense / 2);
+            const isCritical = Math.random() < 0.2;
             const actualDamage = isCritical ? Math.round(damage * 1.5) : Math.round(damage);
             
-            // 发布攻击事件
             gameState.channel.publish('player-attack', {
                 attackerId: gameState.me.id,
                 attackerName: gameState.me.name,
@@ -1146,7 +1088,6 @@
                 targetId: targetId
             });
             
-            // 添加本地攻击反馈
             addChatMessage(gameState.me.name, `攻击 ${target.name}！`);
         }
         
@@ -1155,13 +1096,11 @@
             const damageElement = document.createElement('div');
             damageElement.className = `damage-number ${isCritical ? 'critical' : ''}`;
             damageElement.textContent = damage;
-            damageElement.style.position = 'absolute';
             damageElement.style.left = `${x}px`;
             damageElement.style.top = `${y}px`;
             
             document.getElementById('battlefield').appendChild(damageElement);
             
-            // 动画效果：向上移动并消失
             setTimeout(() => {
                 damageElement.style.transition = 'all 1s';
                 damageElement.style.transform = 'translateY(-20px)';
@@ -1177,12 +1116,11 @@
         function targetDead(targetId, killerName) {
             const targetElement = document.getElementById('player-' + targetId);
             if (targetElement) {
-                // 死亡动画
                 targetElement.style.animation = 'pulse 1s ease-in-out 3';
                 
                 setTimeout(() => {
                     removePlayer(targetId);
-                    addChatMessage('系统', `${gameState.players[targetId].name} 被 ${killerName} 击败！`);
+                    addChatMessage('系统', `${gameState.players[targetId]?.name || '某玩家'} 被 ${killerName} 击败！`);
                 }, 1000);
             }
         }
@@ -1197,24 +1135,37 @@
             }
             
             setTimeout(() => {
-                // 随机复活位置
-                gameState.me.x = Math.random() * 1800 + 100;
-                gameState.me.y = Math.random() * 1800 + 100;
+                let safeX, safeY;
+                do {
+                    safeX = Math.random() * 1800 + 100;
+                    safeY = Math.random() * 1800 + 100;
+                } while (isTooCloseToEnemy(safeX, safeY));
+
+                gameState.me.x = safeX;
+                gameState.me.y = safeY;
                 gameState.me.health = 100;
                 
-                movePlayer(0, 0); // 触发位置更新
+                movePlayer(0, 0);
                 if (myPlayer) {
                     myPlayer.style.opacity = '1';
                     myPlayer.style.pointerEvents = 'auto';
-                    myPlayer.style.animation = 'none'; // 重置动画
+                    myPlayer.style.animation = 'none';
                 }
                 
                 updateHealthDisplay();
                 addChatMessage('系统', '你已复活！');
-                
-                // 保存复活后的玩家数据
                 saveGameData('player-data', gameState.me);
             }, 3000);
+        }
+        
+        // 检查复活位置是否安全
+        function isTooCloseToEnemy(x, y) {
+            for (const playerId in gameState.players) {
+                const player = gameState.players[playerId];
+                const distance = Math.sqrt((player.x - x) ** 2 + (player.y - y) ** 2);
+                if (distance < 300) return true;
+            }
+            return false;
         }
         
         // 随机颜色
@@ -1224,13 +1175,9 @@
         
         // 初始化小地图
         function initMinimap() {
-            // 清空小地图
             document.getElementById('minimap-battlefield').innerHTML = '';
-            
-            // 添加自己的玩家标记
             addPlayerToMinimap(gameState.me, true);
             
-            // 添加其他玩家标记
             Object.values(gameState.players).forEach(player => {
                 if (player.id !== gameState.me.id) {
                     addPlayerToMinimap(player, false);
@@ -1265,9 +1212,8 @@
             }
         }
         
-        // 更新整个小地图
+        // 更新小地图
         function updateMinimap() {
-            // 更新自己的位置
             const myMarker = document.getElementById('minimap-player');
             if (myMarker) {
                 myMarker.style.left = `${(gameState.me.x / 2000) * 100}%`;
@@ -1275,7 +1221,7 @@
             }
         }
         
-        // 页面关闭时通知其他玩家
+        // 页面关闭时离开频道
         window.addEventListener('beforeunload', () => {
             if (gameState.channel) {
                 gameState.channel.presence.leave(gameState.me);
