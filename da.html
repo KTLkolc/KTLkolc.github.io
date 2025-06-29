@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>数据解析 - 微博线索</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            border: 1px solid #003300;
+            padding: 30px;
+            background-color: #000;
+            position: relative;
+        }
+        h1 {
+            color: #009900;
+            text-align: center;
+            border-bottom: 1px dashed #003300;
+            padding-bottom: 10px;
+        }
+        .weibo-post {
+            border: 1px solid #006600;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .weibo-user {
+            color: #00cc00;
+            font-weight: bold;
+        }
+        .weibo-content {
+            margin: 10px 0;
+        }
+        .weibo-time {
+            color: #003300;
+            font-size: 12px;
+        }
+        #decode-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+        #decode-btn {
+            background: #003300;
+            color: #00ff00;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        #decode-btn:hover {
+            background: #006600;
+            transform: scale(1.05);
+        }
+        #hidden-btn {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            background: #330000;
+            color: #ff0000;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #hidden-btn.visible {
+            opacity: 1;
+        }
+        .crash-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: crash 2s forwards;
+        }
+        @keyframes crash {
+            0% { background: #000; }
+            50% { background: #ff0000; }
+            100% { 
+                background: #000;
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+        .win-message {
+            color: #ff0000;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>微博数据解析</h1>
+        
+        <div class="weibo-post">
+            <div class="weibo-user">@UNJSJSDWUDWBARGSK</div>
+            <div class="weibo-content">
+                <p>紧急：实验数据泄露！</p>
+                <p>关键代码：S3VLYQ==</p>
+                <p>请立即转移至安全协议</p>
+            </div>
+            <div class="weibo-time">今天 03:47</div>
+        </div>
+
+        <div id="decode-section">
+            <p>已获取加密信息，准备破译：</p>
+            <button id="decode-btn">破译成功</button>
+            <button id="hidden-btn">紧急终止</button>
+        </div>
+    </div>
+
+    <div class="win-message" id="win-message">你赢了</div>
+
+    <script>
+        document.getElementById('decode-btn').addEventListener('click', function() {
+            const password = prompt("请输入破译密码:");
+            
+            if (password === "KuKa") {
+                window.location.href = "zx.html";
+            } else {
+                alert("密码错误！");
+                // 显示隐藏按钮
+                document.getElementById('hidden-btn').classList.add('visible');
+            }
+        });
+
+        document.getElementById('hidden-btn').addEventListener('click', function() {
+            // 创建崩溃效果
+            const crashDiv = document.createElement('div');
+            crashDiv.className = 'crash-effect';
+            document.body.appendChild(crashDiv);
+            
+            // 显示胜利消息
+            const winMessage = document.getElementById('win-message');
+            winMessage.style.display = 'block';
+            
+            // 尝试关闭浏览器（仅在某些浏览器有效）
+            setTimeout(() => {
+                try {
+                    window.open('', '_self', '');
+                    window.close();
+                } catch (e) {
+                    winMessage.textContent = "再见";
+                    setTimeout(() => {
+                        document.body.innerHTML = '';
+                        document.body.style.backgroundColor = '#000';
+                        document.body.appendChild(winMessage);
+                    }, 1000);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
