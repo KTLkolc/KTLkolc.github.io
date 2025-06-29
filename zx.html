@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>实验档案 #407</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            border: 1px solid #003300;
+            padding: 30px;
+            background-color: #000;
+        }
+        h1 {
+            color: #009900;
+            text-align: center;
+            border-bottom: 1px dashed #003300;
+            padding-bottom: 10px;
+        }
+        .subject-info {
+            margin: 30px 0;
+        }
+        .info-row {
+            display: flex;
+            margin: 10px 0;
+        }
+        .info-label {
+            width: 150px;
+            color: #00cc00;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .anomalies {
+            border: 1px dashed #006600;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .anomaly-item {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .anomaly-item:before {
+            content: "■";
+            color: #ff0000;
+            position: absolute;
+            left: 0;
+        }
+        .final-note {
+            margin-top: 40px;
+            padding: 15px;
+            background-color: #002200;
+            border-left: 3px solid #ff0000;
+        }
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>实验档案 #407</h1>
+        
+        <div class="subject-info">
+            <div class="info-row">
+                <div class="info-label">受试者姓名:</div>
+                <div class="info-value">王黄琴</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">年龄:</div>
+                <div class="info-value">12岁</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">性别:</div>
+                <div class="info-value">女</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">实验日期:</div>
+                <div class="info-value">2023-03-15 至 2023-04-22</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">实验状态:</div>
+                <div class="info-value">已终止</div>
+            </div>
+        </div>
+
+        <div class="anomalies">
+            <h3>异常现象记录</h3>
+            <div class="anomaly-item">
+                <strong>记忆回溯:</strong> 受试者能准确回忆出生时的视觉信息
+            </div>
+            <div class="anomaly-item">
+                <strong>时间感知扭曲:</strong> 在特定条件下能感知未来12-36小时的事件片段
+            </div>
+            <div class="anomaly-item">
+                <strong>量子纠缠现象:</strong> 与实验设备#619-C出现非局部关联
+            </div>
+        </div>
+
+        <div class="final-note">
+            <h3>最终记录</h3>
+            <p>2023-04-22 03:47: 受试者在意识上传过程中突然觉醒，留下最后信息：</p>
+            <p><em>"这不是终点...我在所有时间线上等你们..."</em></p>
+            <p class="blink">警告：该档案已被标记为"第三协议"最高机密</p>
+        </div>
+    </div>
+
+    <script>
+        // 添加闪烁效果
+        setInterval(() => {
+            document.title = document.title === "实验档案 #407" ? 
+                "警告：机密内容" : "实验档案 #407";
+        }, 1000);
+    </script>
+</body>
+</html>
