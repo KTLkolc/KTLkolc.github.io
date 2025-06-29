@@ -2,22 +2,20 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第三计划</title>
+    <title>第三协议 - 身份验证</title>
     <style>
         body {
-            font-family: 'Courier New', monospace, 'Microsoft YaHei';
+            font-family: 'Courier New', monospace;
             background-color: #0a0a0a;
             color: #00ff00;
             margin: 0;
             padding: 20px;
-            line-height: 1.6;
         }
         .container {
             max-width: 800px;
-            margin: 0 auto;
+            margin: 50px auto;
             border: 1px solid #003300;
-            padding: 20px;
+            padding: 30px;
             background-color: #000;
         }
         h1 {
@@ -26,165 +24,86 @@
             border-bottom: 1px dashed #003300;
             padding-bottom: 10px;
         }
-        .hidden {
-            display: none;
-        }
         #login-form {
             margin-top: 30px;
+            text-align: center;
         }
-        input[type="password"], input[type="text"] {
+        input {
             background: #000;
             border: 1px solid #009900;
             color: #00ff00;
-            padding: 8px;
-            width: 200px;
-            font-family: inherit;
+            padding: 10px;
+            margin: 10px 0;
+            width: 250px;
         }
         button {
             background: #003300;
             color: #00ff00;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 20px;
             cursor: pointer;
-            font-family: inherit;
+            transition: background 0.3s;
         }
         button:hover {
             background: #006600;
         }
         .error {
             color: #ff0000;
-            font-size: 12px;
+            height: 20px;
         }
-        .footer {
-            margin-top: 50px;
+        .hidden {
+            display: none;
+        }
+        #console-hint {
+            color: #003300;
             font-size: 12px;
             text-align: center;
-            color: #003300;
-        }
-        .footer a {
-            color: #009900;
-            text-decoration: none;
-        }
-        #hidden-link {
-            cursor: pointer;
-            color: #003300;
-        }
-        #hidden-link:hover {
-            color: #009900;
-        }
-        #terminal-output {
-            min-height: 100px;
-            border: 1px dashed #003300;
-            padding: 10px;
-            margin-top: 10px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>第三计划</h1>
-        <p>我们探索人类认知的边界</p>
+        <h1>第三协议 - 身份验证系统</h1>
+        <p>警告：未经授权访问将受到法律追究</p>
         
-        <!-- 公开内容 -->
-        <div id="public-content">
-            <p>仅限授权人员访问</p>
-            <p><em>记住他的信息。记住所有信息！！！</em></p>
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYSURBVDhPY/j//z8D1UADYxQwRoEBAQAJPgEREFgB8AAAAABJRU5ErkJggg==" 
-                 alt="404" style="cursor: pointer;" id="hidden-link">
-            <p id="click-hint" class="hidden">*检测到静态干扰*</p>
-        </div>
-
-        <!-- 登录表单 -->
-        <div id="login-form" class="hidden">
-            <p>输入访问码：</p>
+        <div id="login-form">
+            <p>请输入访问凭证：</p>
             <input type="password" id="password" placeholder="访问码">
-            <button onclick="checkPassword()">提交</button>
+            <button onclick="checkPassword()">验证身份</button>
             <p id="error-msg" class="error"></p>
         </div>
 
-        <!-- 内部系统 -->
-        <div id="private-content" class="hidden">
-            <h2>内部系统</h2>
-            <p>欢迎, <span id="user-id">用户_407</span>.</p>
-            
-            <h3>实验编号#407: "王黄琴"</h3>
-            <p><strong>受试者:</strong> 女, 12岁</p>
-            <p><strong>状态:</strong> 已终止 (查看<a href="#" onclick="showArchive()">档案</a>)</p>
-            <p><strong>备注:</strong> 意识上传失败。第三协议已启动。</p>
-            
-            <div id="terminal" style="margin-top: 20px;">
-                <p>> <input type="text" id="command" placeholder="输入命令" style="width: 300px;"></p>
-                <div id="terminal-output"></div>
-            </div>
-        </div>
-
-        <!-- 档案 -->
-        <div id="archive" class="hidden">
-            <h3>档案 #407</h3>
-            <p>受试者表现出异常记忆保留。最后陈述：</p>
-            <p><em>"谢谢你找到我...但已经太迟了。"</em></p>
-            <p>最终坐标: 39.9042° N, 116.4074° E (北京坐标)</p>
-            <p><a href="https://weibo.com/u/7873092536" target="_blank">>> 联系观察者 <<</a></p>
-        </div>
-
-        <div class="footer">
-            <p>© 2023 第三计划. <span id="footer-code" style="color: #000;">第三_407</span></p>
-        </div>
+        <p id="console-hint">* 高级用户可通过控制台直接验证 *</p>
     </div>
 
     <script>
-        // 命令系统
-        const commandSystem = {
-            '帮助': () => "可用命令: 状态, 解码, 档案, 联系",
-            '状态': () => `协议状态: 第三协议激活中\n用户权限: 级别3`,
-            '解码': (arg) => arg ? atob(arg) : "需要参数，例如: 解码 VEVTVA==",
-            '档案': () => { showArchive(); return "档案已解锁"; },
-            '联系': () => window.open("https://weibo.com/u/7873092536"),
-            '清除': () => { document.getElementById('terminal-output').innerHTML = ''; return "终端已清空"; }
+        // 控制台自动验证
+        console.log("%c 高级验证系统已加载", "color: #00ff00");
+        console.log("%c 输入 document.verifyIdentity() 进行验证", "color: #009900");
+
+        document.verifyIdentity = function() {
+            document.querySelector('input[type="password"]').value = "第三_407";
+            document.querySelector('button').click();
         };
 
-        // 点击隐藏图片
-        document.getElementById('hidden-link').addEventListener('click', function() {
-            document.getElementById('login-form').classList.remove('hidden');
-            document.getElementById('click-hint').classList.remove('hidden');
-        });
-
-        // 密码验证
         function checkPassword() {
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
             
             if (password === "第三_407") {
-                document.getElementById('public-content').classList.add('hidden');
-                document.getElementById('login-form').classList.add('hidden');
-                document.getElementById('private-content').classList.remove('hidden');
-                document.getElementById('command').focus();
+                errorMsg.textContent = "";
+                setTimeout(() => {
+                    window.location.href = "da.html";
+                }, 1000);
+            } else if (password === "UNSKW123") {
+                errorMsg.textContent = "";
+                setTimeout(() => {
+                    window.location.href = "zx.html";
+                }, 1000);
             } else {
                 errorMsg.textContent = "访问被拒绝。尝试已记录。";
             }
-        }
-
-        // 命令行交互
-        document.getElementById('command').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const input = this.value.trim();
-                const output = document.getElementById('terminal-output');
-                
-                if (input) {
-                    const [cmd, ...args] = input.split(' ');
-                    const response = commandSystem[cmd]?.(args.join(' ')) || `未知命令: ${cmd}`;
-                    
-                    output.innerHTML += `<div>> ${input}</div>`;
-                    output.innerHTML += `<div>${response}</div>`;
-                    output.scrollTop = output.scrollHeight;
-                }
-                
-                this.value = '';
-            }
-        });
-
-        function showArchive() {
-            document.getElementById('archive').classList.remove('hidden');
         }
     </script>
 </body>
