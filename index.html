@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Third Project</title>
+    <title>第三计划</title>
     <style>
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', monospace, 'Microsoft YaHei';
             background-color: #0a0a0a;
             color: #00ff00;
             margin: 0;
@@ -32,12 +32,13 @@
         #login-form {
             margin-top: 30px;
         }
-        input[type="password"] {
+        input[type="password"], input[type="text"] {
             background: #000;
             border: 1px solid #009900;
             color: #00ff00;
             padding: 8px;
             width: 200px;
+            font-family: inherit;
         }
         button {
             background: #003300;
@@ -45,6 +46,7 @@
             border: none;
             padding: 8px 15px;
             cursor: pointer;
+            font-family: inherit;
         }
         button:hover {
             background: #006600;
@@ -70,62 +72,78 @@
         #hidden-link:hover {
             color: #009900;
         }
+        #terminal-output {
+            min-height: 100px;
+            border: 1px dashed #003300;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>THE THIRD PROJECT</h1>
-        <p>We explore the boundaries of human cognition.</p>
+        <h1>第三计划</h1>
+        <p>我们探索人类认知的边界</p>
         
-        <!-- 表面内容 -->
+        <!-- 公开内容 -->
         <div id="public-content">
-            <p>Access restricted to authorized personnel only.</p>
-            <p><em>Remember his information. Remember all information!!!</em></p>
+            <p>仅限授权人员访问</p>
+            <p><em>记住他的信息。记住所有信息！！！</em></p>
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYSURBVDhPY/j//z8D1UADYxQwRoEBAQAJPgEREFgB8AAAAABJRU5ErkJggg==" 
                  alt="404" style="cursor: pointer;" id="hidden-link">
-            <p id="click-hint" class="hidden">*Static interference detected*</p>
+            <p id="click-hint" class="hidden">*检测到静态干扰*</p>
         </div>
 
-        <!-- 隐藏登录表单 -->
+        <!-- 登录表单 -->
         <div id="login-form" class="hidden">
-            <p>Enter access code:</p>
-            <input type="password" id="password" placeholder="Code">
-            <button onclick="checkPassword()">Submit</button>
+            <p>输入访问码：</p>
+            <input type="password" id="password" placeholder="访问码">
+            <button onclick="checkPassword()">提交</button>
             <p id="error-msg" class="error"></p>
         </div>
 
-        <!-- 内部系统（登录后可见） -->
+        <!-- 内部系统 -->
         <div id="private-content" class="hidden">
-            <h2>INTERNAL SYSTEM</h2>
-            <p>Welcome, <span id="user-id">USER_407</span>.</p>
+            <h2>内部系统</h2>
+            <p>欢迎, <span id="user-id">用户_407</span>.</p>
             
-            <h3>Experiment #407: "LIANG CAIQI"</h3>
-            <p><strong>Subject:</strong> Male, age 7</p>
-            <p><strong>Status:</strong> TERMINATED (See <a href="#" onclick="showArchive()">Archive</a>)</p>
-            <p><strong>Notes:</strong> Consciousness upload failed. The Third protocol initiated.</p>
+            <h3>实验编号#407: "王黄琴"</h3>
+            <p><strong>受试者:</strong> 女, 12岁</p>
+            <p><strong>状态:</strong> 已终止 (查看<a href="#" onclick="showArchive()">档案</a>)</p>
+            <p><strong>备注:</strong> 意识上传失败。第三协议已启动。</p>
             
             <div id="terminal" style="margin-top: 20px;">
-                <p>> <input type="text" id="command" placeholder="Enter command" style="width: 300px;"></p>
-                <div id="output"></div>
+                <p>> <input type="text" id="command" placeholder="输入命令" style="width: 300px;"></p>
+                <div id="terminal-output"></div>
             </div>
         </div>
 
-        <!-- 隐藏档案（需命令行激活） -->
+        <!-- 档案 -->
         <div id="archive" class="hidden">
-            <h3>ARCHIVE #407</h3>
-            <p>Subject exhibited anomalous memory retention. Last words:</p>
-            <p><em>"Thank you for finding me... but it's too late."</em></p>
-            <p>Final coordinates: 40.7128° N, 74.0060° W</p>
-            <p><a href="https://twitter.com/Third_Observer" target="_blank">>> CONTACT OBSERVER <<</a></p>
+            <h3>档案 #407</h3>
+            <p>受试者表现出异常记忆保留。最后陈述：</p>
+            <p><em>"谢谢你找到我...但已经太迟了。"</em></p>
+            <p>最终坐标: 39.9042° N, 116.4074° E (北京坐标)</p>
+            <p><a href="https://weibo.com/u/7873092536" target="_blank">>> 联系观察者 <<</a></p>
         </div>
 
         <div class="footer">
-            <p>© 2023 The Third Project. <span id="footer-code" style="color: #000;">THIRD_407</span></p>
+            <p>© 2023 第三计划. <span id="footer-code" style="color: #000;">第三_407</span></p>
         </div>
     </div>
 
     <script>
-        // 点击隐藏图片触发登录框
+        // 命令系统
+        const commandSystem = {
+            '帮助': () => "可用命令: 状态, 解码, 档案, 联系",
+            '状态': () => `协议状态: 第三协议激活中\n用户权限: 级别3`,
+            '解码': (arg) => arg ? atob(arg) : "需要参数，例如: 解码 VEVTVA==",
+            '档案': () => { showArchive(); return "档案已解锁"; },
+            '联系': () => window.open("https://weibo.com/u/7873092536"),
+            '清除': () => { document.getElementById('terminal-output').innerHTML = ''; return "终端已清空"; }
+        };
+
+        // 点击隐藏图片
         document.getElementById('hidden-link').addEventListener('click', function() {
             document.getElementById('login-form').classList.remove('hidden');
             document.getElementById('click-hint').classList.remove('hidden');
@@ -136,27 +154,29 @@
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
             
-            if (password === "THIRD_407") {
+            if (password === "第三_407") {
                 document.getElementById('public-content').classList.add('hidden');
                 document.getElementById('login-form').classList.add('hidden');
                 document.getElementById('private-content').classList.remove('hidden');
+                document.getElementById('command').focus();
             } else {
-                errorMsg.textContent = "Access denied. Attempt logged.";
+                errorMsg.textContent = "访问被拒绝。尝试已记录。";
             }
         }
 
         // 命令行交互
         document.getElementById('command').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                const cmd = this.value;
-                const output = document.getElementById('output');
+                const input = this.value.trim();
+                const output = document.getElementById('terminal-output');
                 
-                if (cmd === "open archive") {
-                    showArchive();
-                } else if (cmd === "help") {
-                    output.innerHTML = "> Valid commands: 'open archive', 'help'";
-                } else {
-                    output.innerHTML = "> Command not recognized.";
+                if (input) {
+                    const [cmd, ...args] = input.split(' ');
+                    const response = commandSystem[cmd]?.(args.join(' ')) || `未知命令: ${cmd}`;
+                    
+                    output.innerHTML += `<div>> ${input}</div>`;
+                    output.innerHTML += `<div>${response}</div>`;
+                    output.scrollTop = output.scrollHeight;
                 }
                 
                 this.value = '';
